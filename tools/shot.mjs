@@ -11,6 +11,7 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { execFileSync } from 'node:child_process';
 import puppeteer from 'puppeteer-core';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -31,16 +32,37 @@ const server = http.createServer((req, res) => {
 await new Promise(r => server.listen(0, '127.0.0.1', r));
 const port = server.address().port;
 
-const EDGE = ['C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe', 'C:/Program Files/Microsoft/Edge/Application/msedge.exe', 'C:/Program Files/Google/Chrome/Application/chrome.exe'].find(p => fs.existsSync(p));
+const EDGE = [process.env.CHROME_PATH, 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe', 'C:/Program Files/Microsoft/Edge/Application/msedge.exe', 'C:/Program Files/Google/Chrome/Application/chrome.exe',
+  '/opt/pw-browsers/chromium', '/usr/bin/chromium', '/usr/bin/chromium-browser', '/usr/bin/google-chrome'].find(p => p && fs.existsSync(p));
+const WIN = process.platform === 'win32';
+const proxy = process.env.HTTPS_PROXY || process.env.https_proxy;
 const browser = await puppeteer.launch({
   executablePath: EDGE, headless: true,
-  args: ['--use-angle=d3d11', '--enable-gpu', '--ignore-gpu-blocklist', '--enable-webgl', '--disable-gpu-sandbox', '--no-first-run', '--disable-extensions', `--window-size=${W},${H}`],
+  args: [WIN ? '--use-angle=d3d11' : '--use-angle=swiftshader', ...(WIN ? [] : ['--enable-unsafe-swiftshader', '--no-sandbox']), ...(proxy && !WIN ? [`--proxy-server=${proxy}`] : []),
+    '--enable-gpu', '--ignore-gpu-blocklist', '--enable-webgl', '--disable-gpu-sandbox', '--no-first-run', '--disable-extensions', `--window-size=${W},${H}`],
   defaultViewport: { width: W, height: H, deviceScaleFactor: 1 },
   protocolTimeout: 300000,
 });
 const logs = [];
 try {
   const page = await browser.newPage();
+  // serve three.js from node_modules instead of the CDN (faster, offline-safe); when a proxy is set
+  // (sandboxed CI), fetch Google Fonts through curl (which trusts the system CA store) and cache them
+  await page.setRequestInterception(true);
+  const fontCache = path.join(root, 'shots/.fontcache');
+  page.on('request', (req) => {
+    const url = req.url();
+    const m = /^https:\/\/cdn\.jsdelivr\.net\/npm\/three@[^/]+\/(.*)$/.exec(url);
+    if (m) return fs.readFile(path.join(root, 'node_modules/three', m[1]), (err, data) => err ? req.continue() : req.respond({ status: 200, contentType: 'text/javascript; charset=utf-8', headers: { 'Access-Control-Allow-Origin': '*' }, body: data }));
+    if (proxy && !WIN && /^https:\/\/fonts\.(googleapis|gstatic)\.com\//.test(url)) {
+      fs.mkdirSync(fontCache, { recursive: true });
+      const f = path.join(fontCache, url.replace(/[^a-z0-9.]+/gi, '_').slice(-180));
+      if (!fs.existsSync(f)) { try { execFileSync('curl', ['-sSfL', '-A', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/130 Safari/537.36', '-o', f, url], { timeout: 60000 }); } catch (e) { return req.abort(); } }
+      const css = url.includes('googleapis');
+      return req.respond({ status: 200, contentType: css ? 'text/css; charset=utf-8' : 'font/woff2', headers: { 'Access-Control-Allow-Origin': '*' }, body: fs.readFileSync(f) });
+    }
+    req.continue();
+  });
   page.on('console', (m) => { const t = m.type(); if (t === 'error' || t === 'warning' || t === 'warn') logs.push(`[console.${t}] ${m.text()}`); });
   page.on('pageerror', (e) => logs.push(`[pageerror] ${e.message}`));
   page.on('requestfailed', (r) => logs.push(`[requestfailed] ${r.url()} ${r.failure()?.errorText}`));

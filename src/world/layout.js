@@ -7,6 +7,8 @@
 //  Camera yaw (degrees) for shots / player: 0 looks north (-Z), 90 west, 180 south, -90 east.
 // ============================================================================
 
+import * as INARI_PLAN from './inari/plan.js';
+
 export const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 export const lerp = (a, b, t) => a + (b - a) * t;
 export const smoothstep = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
@@ -26,6 +28,20 @@ export const WORLD = {
   play: { x0: -92, x1: 92, z0: -97, z1: 128 },   // player is clamped inside
   visual: { x0: -700, x1: 700, z0: -900, z1: 700 }, // distant scenery extent
 };
+
+// ---------------------------------------------------------------- 稲荷山 (Inariyama) — a separate area far east
+// A mountain shrine modelled on Fushimi Inari, built by the inari module in its own region of world space
+// (fog hides it from the town and vice versa). Plan, heights and paths: src/world/inari/plan.js.
+// Reached by praying at the E6 shrine, or key 6; walking back out of the approach returns to town.
+export const INARI = {
+  origin: INARI_PLAN.ORIGIN,
+  play: { x0: INARI_PLAN.ORIGIN.x + INARI_PLAN.BOUNDS.u0, x1: INARI_PLAN.ORIGIN.x + INARI_PLAN.BOUNDS.u1, z0: INARI_PLAN.ORIGIN.z + INARI_PLAN.BOUNDS.v0, z1: INARI_PLAN.ORIGIN.z + INARI_PLAN.BOUNDS.v1 },
+  arrive: { x: INARI_PLAN.ORIGIN.x + INARI_PLAN.SPOTS.arrive.u, z: INARI_PLAN.ORIGIN.z + INARI_PLAN.SPOTS.arrive.v, yaw: INARI_PLAN.SPOTS.arrive.yaw, pitch: INARI_PLAN.SPOTS.arrive.pitch },
+  /** true for world x inside the Inari region (everything east of x = origin - 1500) */
+  contains: (x) => INARI_PLAN.isInari(x),
+};
+/** Player bounds for the region containing (x, z). */
+export const regionBounds = (x) => (INARI.contains(x) ? INARI.play : WORLD.play);
 
 // ---------------------------------------------------------------- railway
 export const RAIL = {
@@ -219,6 +235,7 @@ export const FAR_TOWN = [
 // ---------------------------------------------------------------- terrain height
 /** Ground height (m) at (x,z). Everyone uses this to sit things on the ground. */
 export function heightAt(x, z) {
+  if (x > INARI.origin.x - 1500) return INARI_PLAN.groundAt(x, z);
   // south town gently rises toward the south (street slopes down to the station)
   let h;
   if (z <= 0) h = 0; else if (z < 10) h = 0.028 * z * z / 20; else h = 0.028 * (z - 5);
@@ -312,6 +329,7 @@ SPOTS.shrineSakura = lotToWorld(lotById('E6'), -2.5, -6.5);
 
 // Named areas for the HUD location toast (first match wins).
 export const AREAS = [
+  ...INARI_PLAN.AREAS.map(a => ({ name: a.name, x0: INARI.origin.x + a.u0, x1: INARI.origin.x + a.u1, z0: INARI.origin.z + a.v0, z1: INARI.origin.z + a.v1 })),
   { name: '桜ヶ丘駅 1番線ホーム', x0: -7, x1: 46, z0: -40, z1: -35.5 },
   { name: '桜ヶ丘駅 2番線ホーム', x0: -7, x1: 46, z0: -51, z1: -46 },
   { name: '桜ヶ丘駅', x0: -4, x1: 12, z0: -35.5, z1: -25 },

@@ -6,7 +6,7 @@
 //   x,z = canopy centre, y = canopy centre height, r = canopy radius, h = tree height above ground.
 import * as THREE from 'three';
 import { createSakuraTextures } from './sakura/textures.js';
-import { createSakuraMaterials } from './sakura/materials.js';
+import { sharedSakuraMaterials } from './sakura/materials.js';
 import { makeTree } from './sakura/tree.js';
 import { makePlacements } from './sakura/placements.js';
 import { createBaseBuilder } from './sakura/bases.js';
@@ -14,8 +14,7 @@ import { createNoise } from './sakura/util.js';
 
 export async function build(ctx) {
   const L = ctx.L;
-  const T = createSakuraTextures(ctx);
-  const M = createSakuraMaterials(ctx, T);
+  const M = sharedSakuraMaterials(ctx, createSakuraTextures);
   const noise = createNoise(ctx.rng('sakura-noise'));
   const env = { rng: ctx.rng, noise, heightAt: L.heightAt };
   const { trees: specs } = makePlacements(ctx);

@@ -19,7 +19,7 @@ or other modules (exception: the audio agent owns `src/core/audio.js`). If the c
 it inside your module and report it in `knownIssues`.
 
 Build order (main.js): environment, street, poles, railway, station, plaza, shopsA, shopsB, houses,
-sakura, trains, crossing, props, vehicles, characters, petals. A module may read `ctx.services.X` of an
+sakura, trains, crossing, props, vehicles, characters, petals, inari. A module may read `ctx.services.X` of an
 **earlier** module at build time, and of any module at update time — always with optional chaining and a
 sensible fallback computed from `layout.js` (your module must work alone).
 
@@ -86,6 +86,24 @@ contact wire y = 5.15. Trains: `L.TRAIN` (2 × 18 m cars, 2.8 m wide, stop centr
 centres `L.TRAIN_DOORS_X` = 2, 8, 14, 20, 26, 32), timetable `L.SCHEDULE` (120 s loop; at t≈20–26 train B
 passes the crossing while train A waits at platform 1 with doors open). Bicycle geometry contract: `L.BIKE`.
 Station also owns `STATION.sideYard` (east of the building) and `STATION.westYard` (west, keep low).
+
+### 3b. Separate areas (稲荷山 / `L.INARI`)
+
+The world can hold more than one walkable area. `inari` builds **稲荷山**, a mountain shrine modelled on
+Fushimi Inari Taisha, around `L.INARI.origin` (x = 4000), far outside the town: fog hides each area from
+the other. Rules for areas like it:
+
+* Heights: `L.heightAt(x, z)` hands x > origin − 1500 to the area's own pure height function
+  (`src/world/inari/plan.js`: terrain, flats, stepped stair paths). Physics, the player and every module keep
+  using `heightAt` unchanged.
+* Player bounds: `L.regionBounds(x)` picks the bounds of the area the player is in (main.js applies it every frame).
+* The area builds into its own scene group (children in local coordinates around the origin), batches it
+  itself (`core/batch2.js`), and while the camera is inside the area hides `ctx.staticRoot`, `ctx.dynamicRoot`
+  and the wires mesh (and hides itself while the camera is in town), so only one area is ever drawn.
+* Travel: `ctx.travel(pose, {toast})` (main.js) fades out, teleports and fades back in; `ctx.toast(text)`
+  shows the HUD location sign. Entrances: praying (standing still, facing the hokora) at the E6 shrine,
+  key 6; walking back out of the approach returns to the E6 shrine.
+* HUD names: area rectangles are prepended to `L.AREAS`.
 
 ## 4. Look (cel shading) — rules
 
@@ -177,6 +195,8 @@ ctx.services.shopsA  = { cafeWindow: { x, y, z, rotY, w, h }, cafeTables: [{ x, 
 * **petals**: falling petals (GPU), ground drifts/streaks/piles, petals on benches/vending tops/ballast/gutter
   water/river/café window, train-gust swirls.
 * **audio**: `src/core/audio.js` — synthesized WebAudio implementation of the documented API.
+* **inari**: the whole 稲荷山 area (§3b): terrain + painted ridges, stone stairs, ~800 tunnel torii, 門前町 shops,
+  楼門 / 外拝殿 / 本殿, 奥社, 新池, tea houses, 四ツ辻 view, 一ノ峰 お塚, forest, city basin. Publishes `services.inari`.
 
 ## 8. Verify like you mean it
 

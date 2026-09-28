@@ -73,6 +73,14 @@ function patchPaint(material, amount, grime) {
   material.customProgramCacheKey = () => 'paint';
 }
 
+/** Cache key for material options. Textures are keyed by uuid up front: JSON.stringify calls
+ *  Texture.toJSON() before a replacer sees the value, which would encode every canvas to an image. */
+function optsKey(opts) {
+  let k = '';
+  for (const n of Object.keys(opts)) { const v = opts[n]; k += n + ':' + (v && v.isTexture ? 'tex#' + v.uuid : JSON.stringify(v)) + ';'; }
+  return k;
+}
+
 export function createMaterials(shared) {
   const gradientMap = makeGradientMap();
   const cache = new Map();
@@ -83,7 +91,7 @@ export function createMaterials(shared) {
    *  emissive, emissiveIntensity, paint (0..0.15 hand-painted variation, default 0.05),
    *  polygonOffset (number: factor, negative pulls toward camera), depthWrite, name, flatShading */
   function toon(c = '#ffffff', opts = {}) {
-    const key = 'toon|' + color(c).getHexString() + '|' + JSON.stringify(opts, (k, v) => (v && v.isTexture ? v.uuid : v));
+    const key = 'toon|' + color(c).getHexString() + '|' + optsKey(opts);
     if (cache.has(key)) return cache.get(key);
     const m = new THREE.MeshToonMaterial({
       color: color(c),
@@ -116,7 +124,7 @@ export function createMaterials(shared) {
 
   /** Unlit / self-lit material (screens, lamps, lit signs, interior glow). intensity > 1 blooms. */
   function emissive(c = '#ffffff', intensity = 1.6, opts = {}) {
-    const key = 'emi|' + color(c).getHexString() + '|' + intensity + '|' + JSON.stringify(opts, (k, v) => (v && v.isTexture ? v.uuid : v));
+    const key = 'emi|' + color(c).getHexString() + '|' + intensity + '|' + optsKey(opts);
     if (cache.has(key)) return cache.get(key);
     const m = new THREE.MeshBasicMaterial({
       color: color(c).multiplyScalar(intensity), map: opts.map || null, transparent: !!opts.transparent,

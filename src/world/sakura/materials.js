@@ -164,6 +164,15 @@ function extend(m, shared, { key, rim = 0, sheen = 0, sway = false, noFlip = fal
   return m;
 }
 
+const _shared = new WeakMap();
+/** The sakura materials, created once per context: they patch cached ctx.mat materials in place, so a second
+ *  createSakuraMaterials() on the same context would inject the shader code twice (used by sakura + inari). */
+export function sharedSakuraMaterials(ctx, makeTextures) {
+  let M = _shared.get(ctx.mat);
+  if (!M) { M = createSakuraMaterials(ctx, makeTextures(ctx)); _shared.set(ctx.mat, M); }
+  return M;
+}
+
 export function createSakuraMaterials(ctx, T) {
   const { mat, shared, palette: P } = ctx;
   const M = {};

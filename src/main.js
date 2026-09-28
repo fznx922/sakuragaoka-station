@@ -11,7 +11,7 @@ import { createAudio } from './core/audio.js';
 
 export const MODULES = [
   'environment', 'street', 'poles', 'railway', 'station', 'plaza', 'shopsA', 'shopsB', 'houses',
-  'sakura', 'trains', 'crossing', 'props', 'vehicles', 'characters', 'petals',
+  'sakura', 'trains', 'crossing', 'props', 'vehicles', 'characters', 'petals', 'inari',
 ];
 
 const params = new URLSearchParams(location.search);
@@ -80,6 +80,7 @@ const LABELS = {
   environment: '地形と河川敷', street: '商店街の道', poles: '電柱と電線', railway: '線路と架線', station: '駅舎とホーム', plaza: '駅前広場',
   shopsA: 'コンビニ・喫茶・花屋・書店', shopsB: '和菓子・よろず屋・ラーメン・自転車店', houses: '住宅街', sakura: '桜並木', trains: '電車',
   crossing: '踏切', props: '自販機と小物', vehicles: '自転車と車', characters: '町の人々', petals: '花びら',
+  inari: '稲荷山と千本鳥居',
 };
 
 async function build() {
@@ -127,6 +128,7 @@ const VIEWS = {
   Digit3: { x: 20.0, z: -37.6, yaw: 95, pitch: 0, label: '1番線ホーム' },
   Digit4: { x: -12.8, z: -31.5, yaw: -8, pitch: 3, label: '踏切' },
   Digit5: { x: -20.0, z: -92.8, yaw: 160, pitch: -2, label: '河川敷' },
+  Digit6: { ...L.INARI.arrive, label: '稲荷山', travel: true },
 };
 
 // ------------------------------------------------------------------ simulation
@@ -177,6 +179,19 @@ function showToast(name) {
   el.classList.remove('show'); void el.offsetWidth; el.classList.add('show');
   clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 3800);
 }
+ctx.toast = (text) => { if (started) showToast(text); };
+/** Move the player somewhere else (another area): fade to white, teleport, fade back in. */
+let travelling = false;
+ctx.travel = (pose, { toast = null } = {}) => {
+  const go = () => { player.fly = false; player.setPose(pose.x, pose.z, pose.yaw ?? 0, pose.pitch ?? 0); areaName = ''; if (toast) showToast(toast); };
+  if (SHOT) return; // screenshots place the camera explicitly
+  const el = $('fade');
+  if (!el) { go(); return; }
+  if (travelling) return;
+  travelling = true;
+  el.classList.add('on');
+  setTimeout(() => { go(); requestAnimationFrame(() => requestAnimationFrame(() => { el.classList.remove('on'); travelling = false; })); }, 650);
+};
 function hudTick(t) {
   const n = areaAt(player.pos.x, player.pos.z);
   if (n && n !== areaName) { areaName = n; if (started) showToast(n); }
@@ -191,6 +206,7 @@ function frame(now) {
   let dt = Math.min(0.1, (now - last) / 1000); last = now;
   if (SHOT) dt = 0;
   simT += dt;
+  player.bounds = L.regionBounds(player.pos.x);
   if (!SHOT) player.update(dt);
   ctx.physics.refreshDynamic();
   stepUpdates(dt, simT);
@@ -236,9 +252,11 @@ async function main() {
     if (!started) return;
     if (e.code === 'KeyH') document.body.classList.toggle('noui');
     if (e.code === 'KeyM') { audio.muted = !audio.muted; const b = $('mute'); if (b) b.setAttribute('aria-pressed', String(audio.muted)); }
-    if (e.code === 'KeyR') player.setPose(L.HERO.x, L.HERO.z, L.HERO.yaw, L.HERO.pitch);
+    if (e.code === 'KeyR') { if (L.INARI.contains(player.pos.x)) ctx.travel(L.HERO, { toast: L.NAMES.shoppingStreet }); else player.setPose(L.HERO.x, L.HERO.z, L.HERO.yaw, L.HERO.pitch); }
     if (e.code === 'Backquote') { const s = $('stats'); if (s) s.hidden = !s.hidden; }
-    const v = VIEWS[e.code]; if (v) { player.fly = false; player.setPose(v.x, v.z, v.yaw, v.pitch); }
+    const v = VIEWS[e.code];
+    if (v && (v.travel || L.INARI.contains(player.pos.x) !== L.INARI.contains(v.x))) ctx.travel(v, { toast: v.label });
+    else if (v) { player.fly = false; player.setPose(v.x, v.z, v.yaw, v.pitch); }
   });
   const q = $('quality');
   if (q) { q.value = qName; q.addEventListener('change', () => { try { localStorage.setItem('sakura.q', q.value); } catch (e) {} location.reload(); }); }
