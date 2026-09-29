@@ -143,8 +143,9 @@ export function buildSigns(ctx, H) {
     if (B2 === 'both') k.plane(pw, ph, em, [0, 0, -0.095], [0, Math.PI, 0]);
     boards.push({ c, g2: c.getContext('2d'), tex, rows, list, shin, w, h });
   };
-  // concourse board over the gates (faces the entrance): all six tracks
-  lcd(1024, 640, 6, 6.5, 3.2, P.GATES.v + 0.5, 0, 6.4, 4.0 * 0.62, [1, 2, 3, 4, 5, 6]);
+  // concourse board (faces the entrance): all six tracks. It hangs from the ceiling a few metres in front of the
+  // gates, over the walkway — clear of the gate sign, the staffed booth (2.6 m) and people's heads (bottom ≈ 2.05 m)
+  lcd(1024, 640, 6, 2.2, 3.2, P.GATES.v + 3.6, 0, 3.4, 2.125, [1, 2, 3, 4, 5, 6], false, 'both', [[-1.3, CE], [1.3, CE]]);
   // Shinkansen board over the transfer gates (faces the conventional side)
   lcd(1024, 256, 2, 4.2, 3.35, P.SGATES.v + 0.5, 0, 4.8, 1.2, [13, 14], true, 'both', [[-1.8, CE], [1.8, CE]]);
   // one per island at the stair top (faces east along the platform, hanging from the cable ducts) + one per Shinkansen platform
@@ -168,7 +169,7 @@ export function buildSigns(ctx, H) {
       g.fillStyle = shin ? '#1553a8' : P.LINES[S.line].color; T.roundRect(g, 14, y - rh * 0.34, rh * 0.68, rh * 0.68, 8); g.fill();
       g.fillStyle = '#fff'; g.font = `900 ${fs * 0.9}px ${F.en}`; g.textAlign = 'center'; g.fillText(String(trk), 14 + rh * 0.34, y + 2);
       let x = 24 + rh * 0.68;
-      if (shin) { g.fillStyle = '#ff8a2a'; g.font = `700 ${fs}px ${F.sans}`; g.textAlign = 'left'; g.fillText(en ? `${S.nameEn} ${S.no}` : `${S.name} ${S.no}号`, x + 6, y); x += fs * 4.6; }
+      if (shin) { g.fillStyle = '#ff8a2a'; g.font = `700 ${fs}px ${F.sans}`; g.textAlign = 'left'; T.fitText(g, en ? `${S.nameEn} ${S.no}` : `${S.name} ${S.no}号`, x + 6, y, fs * 5.0, fs, en ? F.en : F.sans, 700); x += fs * 5.5; }
       else { g.fillStyle = TYPE_COL[S.type] || '#ddd'; g.font = `700 ${fs}px ${F.sans}`; g.textAlign = 'left'; T.fitText(g, en ? S.typeEn : S.type, x + 8, y, fs * 3.3, fs, en ? F.en : F.sans, 700); x += fs * 3.6; }
       g.fillStyle = '#ffb347'; g.font = `700 ${fs}px ${F.sans}`; g.textAlign = 'left'; g.fillText(P.clock(dep), x, y); x += fs * 2.9;
       g.fillStyle = '#f4f2ea'; T.fitText(g, en ? S.destEn : S.dest + (S.via && !en ? `(${S.via}経由)` : ''), x, y, w - x - (shin ? 200 : 200), fs, en ? F.en : F.sans, 700);
