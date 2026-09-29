@@ -1,10 +1,10 @@
-// terminal — 桜都駅 (Ōto), a big JR-style terminal in its own region far west of the town, modelled on
+// terminal — 大阪駅 (JR Osaka, a personal fan recreation), a big JR terminal in its own region far west of the town, modelled on
 // Osaka Station (ground-level island platforms under a huge glass dome, a concourse below) with a
 // Shin-Osaka-style Shinkansen side (side platforms with platform gates + two through tracks).
 //   concourse: ticket machines, fare chart, 中央改札 (IC gates that beep), shops, stairs + escalators
 //   platforms 1–6: 8-car EMUs on a timetable with approach / departure melodies and announcements
 //   新幹線のりかえ口 → platforms 13 / 14: 16-car Shinkansen pulling in, and others passing at 250 km/h
-// Operator, names and melodies are fictional / original. Plan + timetable: src/world/terminal/plan.js.
+// Real JR West line names + destinations (plus the 桜川線 branch home); melodies are original. Plan + timetable: src/world/terminal/plan.js.
 // Portals: step into the open door of the train at Sakuragaoka platform 1 (or key 7) → arrive on
 // platform 1 here; step into the 桜川線 train on track 1 while its doors are open → back to town.
 import * as THREE from 'three';
@@ -14,6 +14,7 @@ import { makeTextures } from './terminal/tex.js';
 import { makeMaterials } from './terminal/mats.js';
 import { buildStructure } from './terminal/structure.js';
 import { buildRoof } from './terminal/roof.js';
+import { buildCanopy } from './terminal/canopy.js';
 import { buildGates } from './terminal/gates.js';
 import { buildFurniture } from './terminal/furniture.js';
 import { buildSigns } from './terminal/signs.js';
@@ -21,6 +22,7 @@ import { buildTrains } from './terminal/trains.js';
 import { buildCity } from './terminal/city.js';
 import { buildOps } from './terminal/ops.js';
 import { buildPeople } from './terminal/people.js';
+import { buildCrowd } from './terminal/crowd.js';
 
 export async function build(ctx) {
   const { L } = ctx;
@@ -51,6 +53,7 @@ export async function build(ctx) {
 
   const structure = step('structure', () => buildStructure(ctx, H)) || {};
   step('roof', () => buildRoof(ctx, H));
+  step('canopy', () => buildCanopy(ctx, H));
   step('gates', () => buildGates(ctx, H));
   step('furniture', () => buildFurniture(ctx, H, structure));
   const signs = step('signs', () => buildSigns(ctx, H)) || {};
@@ -58,9 +61,10 @@ export async function build(ctx) {
   step('city', () => buildCity(ctx, H));
   step('ops', () => buildOps(ctx, H, { signs, trains }));
   step('people', () => buildPeople(ctx, H));
+  const crowd = step('crowd', () => buildCrowd(ctx, H)) || {};
 
-  const stats = step('batch', () => batchStatic(top, { mat: ctx.mat, farR: 1e9 }));
-  ctx.services.terminal = { origin: P.ORIGIN, stats, plan: P, trains: trains.list?.length || 0 };
+  const stats = step('batch', () => batchStatic(top, { mat: ctx.mat, farR: 1e9, nearCell: 110 }));
+  ctx.services.terminal = { origin: P.ORIGIN, stats, plan: P, trains: trains.list?.length || 0, crowd: crowd.count || 0 };
   ctx.realm?.register('terminal', top);
   ctx.onUpdate((dt, t) => { for (const fn of updates) fn(dt, t); });
 
@@ -76,7 +80,7 @@ export async function build(ctx) {
     const atDoor = open && p.y > L.PLATFORM.y - 0.3 && p.z < L.PLATFORM.south.edgeZ + 0.75 && p.z > L.PLATFORM.south.edgeZ - 0.3 && L.TRAIN_DOORS_X.some(x => Math.abs(p.x - x) < 0.7);
     if (!atDoor) { hold = 0; return; }
     hold += dt;
-    if (hold > 0.5) { hold = 0; ctx.travel(L.TERMINAL.arrive, { toast: '桜川線 → 桜都駅 1番のりば' }); }
+    if (hold > 0.5) { hold = 0; ctx.travel(L.TERMINAL.arrive, { toast: '桜川線 → 大阪駅 1番のりば' }); }
   });
   return { stats };
 }

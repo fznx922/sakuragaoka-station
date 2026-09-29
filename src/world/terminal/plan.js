@@ -1,6 +1,7 @@
-// 桜都駅 (Ōto Station) — the plan of a big JR-style terminal, modelled on Osaka Station (ground-level
-// island platforms under a huge glass dome, a concourse below) with a Shin-Osaka-style Shinkansen side
-// (two side platforms with platform gates + two through tracks). Operator / names are fictional.
+// 大阪駅 (JR West) — the plan of a big JR terminal, modelled on Osaka Station (ground-level island
+// platforms under a huge glass dome, a concourse below) with a Shin-Osaka-style Shinkansen side (two side
+// platforms with platform gates + two through tracks). A personal fan recreation: real JR line names and
+// destinations, plus the fictional 桜川線 branch home to 桜ヶ丘 (the town).
 //
 // Self-contained (no imports): layout.js imports it. Pure data + pure functions of time (deterministic).
 // Local frame: u = x - ORIGIN.x (+u = east, along the tracks), v = z - ORIGIN.z (+v = south).
@@ -10,7 +11,12 @@
 //           6.7    conventional platforms (1.1 m above rail);  6.85 Shinkansen platforms (1.25 m)
 
 export const ORIGIN = { x: -4000, z: 0 };
-export const NAME = { kanji: '桜都', kana: 'おうと', en: 'Ōto', no: 'KR-A01', company: '関西旅客鉄道', companyEn: 'KR West', mark: 'KR' };
+export const NAME = { kanji: '大阪', kana: 'おおさか', en: 'Ōsaka', no: 'JR-A47', company: '西日本旅客鉄道', companyEn: 'JR West', mark: 'JR' };
+/** neighbouring stations on the 駅名標 (west, east) per platform */
+export const NEIGHBOURS = {
+  P1: [['塚本', 'Tsukamoto', 'JR-A46'], ['新大阪', 'Shin-Ōsaka', 'JR-A46']], P2: [['塚本', 'Tsukamoto', 'JR-A46'], ['新大阪', 'Shin-Ōsaka', 'JR-A45']],
+  P3: [['福島', 'Fukushima', 'JR-O12'], ['天満', 'Temma', 'JR-O10']], S: [['新神戸', 'Shin-Kōbe'], ['京都', 'Kyōto']],
+};
 export const Y = { floor: 0, ceil: 4.6, deck: 5.3, rail: 5.6, plat: 6.7, platS: 6.85 };
 /** Walkable bounds (local). The street plaza is south, the station occupies v ≲ 30. */
 export const BOUNDS = { u0: -214, u1: 214, v0: -66.5, v1: 78 };
@@ -52,28 +58,32 @@ export const liftHole = (L) => ({ u0: L.u0 - 0.3, u1: L.u0 + 13.5, v0: L.v - 3.0
 // dir: +1 = trains travel +u (east, 京桜 方面), -1 = west (浜音 方面).
 export const PERIOD = 180, S_PERIOD = 240;
 export const LINES = {
-  sakuragawa: { name: '桜川線', color: '#ef9fbe', band: '#d9718f' },
-  kyoto: { name: '京桜線', color: '#2f7fc0', band: '#1f5f9a' },
-  kobe: { name: '浜音線', color: '#2f7fc0', band: '#1f5f9a' },
-  loop: { name: '環状線', color: '#e9853a', band: '#c96a24' },
-  yume: { name: '夢咲線', color: '#3fa36b', band: '#2b7d50' },
+  sakuragawa: { name: '桜川線', en: 'Sakuragawa Line', sym: 'S', color: '#ef8fb4', band: '#d9718f' },
+  kyoto: { name: 'JR京都線', en: 'JR Kyoto Line', sym: 'A', color: '#0072bc', band: '#1f5f9a' },
+  kobe: { name: 'JR神戸線', en: 'JR Kobe Line', sym: 'A', color: '#0072bc', band: '#1f5f9a' },
+  loop: { name: '大阪環状線', en: 'Osaka Loop Line', sym: 'O', color: '#f15a22', band: '#c96a24' },
+  yume: { name: 'JRゆめ咲線', en: 'JR Yumesaki Line', sym: 'P', color: '#1f6fbd', band: '#e3007f' },
 };
 export const SERVICES = {
   1: { line: 'sakuragawa', type: '普通', typeEn: 'Local', dest: '桜ヶ丘', destEn: 'Sakuragaoka', via: '花見台', dir: -1, cars: 6, offset: 0 },
-  2: { line: 'kyoto', type: '新快速', typeEn: 'Special Rapid', dest: '近江野', destEn: 'Ōmino', via: '京桜', dir: 1, cars: 8, offset: 60 },
-  3: { line: 'kobe', type: '快速', typeEn: 'Rapid', dest: '白鷺台', destEn: 'Shirasagidai', via: '浜音', dir: -1, cars: 8, offset: 120 },
-  4: { line: 'kyoto', type: '普通', typeEn: 'Local', dest: '京桜', destEn: 'Kyōzakura', via: '', dir: 1, cars: 8, offset: 30 },
-  5: { line: 'loop', type: '環状', typeEn: 'Loop', dest: '環状線 内回り', destEn: 'Loop Line', via: '', dir: -1, cars: 8, offset: 90 },
-  6: { line: 'yume', type: '直通', typeEn: 'Through', dest: '夢咲', destEn: 'Yumesaki', via: '', dir: 1, cars: 8, offset: 150 },
+  2: { line: 'kyoto', type: '新快速', typeEn: 'Special Rapid', dest: '米原', destEn: 'Maibara', via: '京都', dir: 1, cars: 8, offset: 60 },
+  3: { line: 'kobe', type: '新快速', typeEn: 'Special Rapid', dest: '姫路', destEn: 'Himeji', via: '三ノ宮', dir: -1, cars: 8, offset: 120 },
+  4: { line: 'kyoto', type: '普通', typeEn: 'Local', dest: '高槻', destEn: 'Takatsuki', via: '', dir: 1, cars: 8, offset: 30 },
+  5: { line: 'loop', type: '環状', typeEn: 'Loop', dest: '天王寺', destEn: 'Tennōji', via: '京橋', dir: -1, cars: 8, offset: 90 },
+  6: { line: 'yume', type: '直通', typeEn: 'Direct', dest: '桜島', destEn: 'Sakurajima', via: 'ユニバーサルシティ', dir: 1, cars: 8, offset: 150 },
 };
 export const S_SERVICES = {
-  13: { name: 'はなかぜ', nameEn: 'Hanakaze', dest: '東都', destEn: 'Tōto', dir: 1, offset: 20 },
-  14: { name: 'はなかぜ', nameEn: 'Hanakaze', dest: '西都', destEn: 'Saito', dir: -1, offset: 140 },
+  13: { name: 'のぞみ', nameEn: 'Nozomi', no: 22, dest: '東京', destEn: 'Tōkyō', dir: 1, offset: 20 },
+  14: { name: 'のぞみ', nameEn: 'Nozomi', no: 37, dest: '博多', destEn: 'Hakata', dir: -1, offset: 140 },
   P1: { name: '', dest: '', dir: 1, offset: 95, pass: true },
   P2: { name: '', dest: '', dir: -1, offset: 205, pass: true },
 };
 /** readings for the synthesized announcements (fictional names in kanji are read unpredictably) */
-export const KANA = { 桜ヶ丘: 'さくらがおか', 近江野: 'おうみの', 白鷺台: 'しらさぎだい', 京桜: 'きょうざくら', '環状線 内回り': 'かんじょうせん、うちまわり', 夢咲: 'ゆめさき', 東都: 'とうと', 西都: 'さいと', はなかぜ: 'はなかぜ' };
+export const KANA = { 桜ヶ丘: 'さくらがおか', 米原: 'まいばら', 姫路: 'ひめじ', 高槻: 'たかつき', 天王寺: 'てんのうじ', 桜島: 'さくらじま', 東京: 'とうきょう', 博多: 'はかた', 京都: 'きょうと', 三ノ宮: 'さんのみや', 京橋: 'きょうばし', 花見台: 'はなみだい' };
+/** platform frames (the steel spine along each platform that carries lights, signs and boards): underside height above the platform */
+export const FRAME_H = 4.3;
+/** under the dome (|u| < DOME_U) platforms only have frames; beyond it they get full canopies */
+export const DOME_U = 88;
 export const CAR = { len: 20, gap: 0.5, w: 2.9 };           // conventional EMU car
 export const SCAR = { len: 25, nose: 27, gap: 0.6, w: 3.38, cars: 16 };
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
@@ -166,11 +176,11 @@ export const SPOTS = {
   shin: { u: 40, v: -36.5, yaw: 90, pitch: 1 },        // Shinkansen platform 13
 };
 export const AREAS = [   // y0 / y1: only at these heights (platforms are above the concourse)
-  { name: '桜都駅 新幹線 13・14番のりば', u0: -214, u1: 214, v0: -64, v1: -33, y0: 5 },
-  { name: '桜都駅 1・2番のりば', u0: -110, u1: 110, v0: 15, v1: 25.2, y0: 5 },
-  { name: '桜都駅 3・4番のりば', u0: -110, u1: 110, v0: -2.6, v1: 7.4, y0: 5 },
-  { name: '桜都駅 5・6番のりば', u0: -110, u1: 110, v0: -20.2, v1: -10.2, y0: 5 },
-  { name: '桜都駅 新幹線のりかえ口', u0: -34, u1: 34, v0: -66, v1: -28, y1: 4 },
-  { name: '桜都駅 中央口', u0: -60, u1: 60, v0: 32, v1: 80, y1: 4 },
-  { name: '桜都駅 コンコース (改札内)', u0: -34, u1: 34, v0: -28, v1: 32, y1: 4 },
+  { name: '大阪駅 新幹線 13・14番のりば', u0: -214, u1: 214, v0: -64, v1: -33, y0: 5 },
+  { name: '大阪駅 1・2番のりば', u0: -110, u1: 110, v0: 15, v1: 25.2, y0: 5 },
+  { name: '大阪駅 3・4番のりば', u0: -110, u1: 110, v0: -2.6, v1: 7.4, y0: 5 },
+  { name: '大阪駅 5・6番のりば', u0: -110, u1: 110, v0: -20.2, v1: -10.2, y0: 5 },
+  { name: '大阪駅 新幹線のりかえ口', u0: -34, u1: 34, v0: -66, v1: -28, y1: 4 },
+  { name: '大阪駅 中央口', u0: -60, u1: 60, v0: 32, v1: 80, y1: 4 },
+  { name: '大阪駅 コンコース (改札内)', u0: -34, u1: 34, v0: -28, v1: 32, y1: 4 },
 ];

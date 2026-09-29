@@ -1,4 +1,4 @@
-// 桜都駅 structure: the ground-floor concourse (floor, ceiling with light lines, walls, the glass south
+// 大阪駅 structure: the ground-floor concourse (floor, ceiling with light lines, walls, the glass south
 // facade, pillars), the track deck with ballast / slab track, rails and sleepers, the three island platforms
 // and the two Shinkansen side platforms (edge lines, tactile strips), and the stair + escalator stacks up to
 // each platform (animated escalator steps that carry the player).
@@ -83,6 +83,36 @@ export function buildStructure(ctx, H) {
     H.box(u, v, 1.2, 1.2, 0, -1, CEIL);
   }
   H.pillars = pillars;
+  // ceiling fittings between the light lines: downlights, PA speakers, smoke detectors, air-conditioning vents
+  {
+    const inHole = (u, v) => holes.some(h => u > h.u0 - 0.8 && u < h.u1 + 0.8 && v > h.v0 - 0.8 && v < h.v1 + 0.8);
+    const dl = ctx.mat.emissive('#fff4e0', 1.05), rim = M.steel, vent = ctx.mat.toon('#b9bdc2', { paint: 0.02 }), spk = M.white;
+    for (let u = C.u0 + 3; u < C.u1 - 1; u += 6) for (let v = C.v0 + 2; v < C.v1 - 1; v += 4) {
+      if (inHole(u, v)) continue;
+      const k = (Math.round(u / 6) + Math.round(v / 4)) % 4;
+      if (k === 0) { K.cyl(0.14, 0.14, 0.03, rim, [u, CEIL - 0.015, v], null, 12); K.cyl(0.1, 0.1, 0.01, dl, [u, CEIL - 0.03, v], null, 12); }
+      else if (k === 1) { K.box(0.9, 0.03, 0.3, vent, [u, CEIL - 0.015, v]); for (let i = -3; i <= 3; i++) K.box(0.8, 0.012, 0.02, M.steelD, [u, CEIL - 0.032, v + i * 0.035]); }
+      else if (k === 2) { K.cyl(0.13, 0.15, 0.08, spk, [u, CEIL - 0.04, v], null, 12); K.cyl(0.09, 0.09, 0.01, M.steelD, [u, CEIL - 0.085, v], null, 12); }
+      else { K.cyl(0.06, 0.07, 0.05, spk, [u, CEIL - 0.025, v], null, 8); K.sphere(0.012, ctx.mat.emissive('#ff5a4a', 1.2), [u + 0.03, CEIL - 0.055, v], 6); }
+    }
+  }
+  // digital signage on the in-gate pillars (one lit ad face each)
+  {
+    const T = ctx.tex, F = T.FONTS;
+    const ads = [['大阪ステーションシティ', '春のフェア開催中', '#e9785a'], ['ICOCA', 'タッチでピッ', '#0072bc'], ['新幹線 のぞみ', '東京まで 2時間27分', '#1553a8'], ['駅弁まつり', '全国の味が大集合', '#c9503c']].map(([a, b, c], i) => T.draw(256, 512, (g, w, h) => {
+      const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, c); gr.addColorStop(1, '#1b2130'); g.fillStyle = gr; g.fillRect(0, 0, w, h);
+      g.fillStyle = 'rgba(255,255,255,0.12)'; for (let k = 0; k < 6; k++) { g.beginPath(); g.arc(40 + k * 40, 160 + (k % 2) * 60, 30 + k * 6, 0, 6.3); g.fill(); }
+      g.fillStyle = '#fff'; g.textAlign = 'center'; g.textBaseline = 'middle'; T.fitText(g, a, w / 2, 330, w - 30, 40, F.sans, 900);
+      g.font = `700 24px ${F.sans}`; T.fitText(g, b, w / 2, 390, w - 40, 26, F.sans, 700);
+      g.fillStyle = 'rgba(255,255,255,0.7)'; g.font = `600 16px ${F.en}`; g.fillText('JR WEST', w / 2, 470);
+    }, { key: 'term.pad' + i }));
+    pillars.filter(([u, v]) => v > -28 && v < 32).forEach(([u, v], i) => {
+      for (const [du, dv, ry] of [[0, 0.625, 0], [0, -0.625, Math.PI]]) {
+        K.box(0.9, 1.7, 0.05, M.black, [u + du, 1.45, v + dv]);
+        K.plane(0.8, 1.6, ctx.mat.emissive('#ffffff', 0.95, { map: ads[(i + (dv > 0 ? 0 : 2)) % ads.length] }), [u + du, 1.45, v + dv + (dv > 0 ? 0.027 : -0.027)], [0, ry, 0]);
+      }
+    });
+  }
 
   // ================================================================ track deck, tracks, platforms
   const DECK_V = [[-31, 30.2], [-67.5, -31]];
@@ -90,9 +120,11 @@ export function buildStructure(ctx, H) {
   for (const [v0, v1] of DECK_V) {
     for (let u = -DU; u < DU; u += 100) {
       const r = { u0: u, u1: u + 100, v0, v1 };
-      for (const q of rectMinus(r, holes)) boxAt(q.u0, q.u1, CEIL, Y.deck, q.v0, q.v1, M.concreteD);
+      // the slab starts just above the concourse ceiling (a shared plane would z-fight with it)
+      for (const q of rectMinus(r, holes)) boxAt(q.u0, q.u1, CEIL + 0.06, Y.deck, q.v0, q.v1, M.concreteD);
     }
-    quad(-DU, DU, v0, v1, Y.deck + 0.005, M.concrete, 4);
+    // deck surface, minus the stair wells (a plane over a well reads as a solid wall from the stairs)
+    for (let u = -DU; u < DU; u += 100) for (const q of rectMinus({ u0: u, u1: u + 100, v0, v1 }, holes)) quad(q.u0, q.u1, q.v0, q.v1, Y.deck + 0.005, M.concrete, 4);
   }
   // deck walk surface (catches anyone stepping off a platform; does not block the concourse below)
   for (const [v0, v1] of DECK_V) for (let u = -210; u < 210; u += 60) {
@@ -149,7 +181,19 @@ export function buildStructure(ctx, H) {
     const L = P.LIFTS.find(l => l.plat === S.id);
     platform(-P.S_PLAT_LEN / 2, P.S_PLAT_LEN / 2, S.v0, S.v1, Y.platS, [S.edge], P.liftHole(L));
     const back = S.edge === S.v0 ? S.v1 : S.v0;
-    boxAt(-P.S_PLAT_LEN / 2, P.S_PLAT_LEN / 2, Y.platS, Y.platS + 2.6, Math.min(back, back + (back > S.edge ? 0.25 : -0.25)), Math.max(back, back + (back > S.edge ? 0.25 : -0.25)), M.white);
+    {
+      // back wall: a low solid wall with a handrail, glazing above it on slim mullions
+      const w0 = Math.min(back, back + (back > S.edge ? 0.25 : -0.25)), w1 = Math.max(back, back + (back > S.edge ? 0.25 : -0.25)), vm = (w0 + w1) / 2;
+      for (let u = -P.S_PLAT_LEN / 2; u < P.S_PLAT_LEN / 2 - 1e-6; u += 60) {
+        const ua = u, ub = Math.min(P.S_PLAT_LEN / 2, u + 60);
+        boxAt(ua, ub, Y.platS, Y.platS + 1.1, w0, w1, M.white);
+        boxAt(ua, ub, Y.platS + 1.1, Y.platS + 1.16, w0 - 0.04, w1 + 0.04, M.steel);
+        boxAt(ua, ub, Y.platS + 1.16, Y.platS + 2.6, vm - 0.02, vm + 0.02, M.glass);
+        boxAt(ua, ub, Y.platS + 2.6, Y.platS + 2.7, w0, w1, M.steel);
+        boxAt(ua, ub, Y.platS + 0.02, Y.platS + 0.14, back > S.edge ? w0 - 0.02 : w1, back > S.edge ? w0 : w1 + 0.02, M.steelD);
+      }
+      for (let u = -P.S_PLAT_LEN / 2; u <= P.S_PLAT_LEN / 2 + 1e-6; u += 2.4) boxAt(u - 0.04, u + 0.04, Y.platS + 1.1, Y.platS + 2.7, vm - 0.05, vm + 0.05, M.steelD);
+    }
     H.box(0, back, P.S_PLAT_LEN, 0.4, 0, Y.platS - 0.3, Y.platS + 3);
     for (const u of [-P.S_PLAT_LEN / 2, P.S_PLAT_LEN / 2]) H.box(u, (S.v0 + S.v1) / 2, 0.2, 8, 0, Y.platS - 0.3, Y.platS + 3);
   }
@@ -183,6 +227,17 @@ export function buildStructure(ctx, H) {
     };
     panel(ev0 - 0.12, 0.2, M.escBody, true); panel(ev1 + 0.15, 0.3, M.escBody, true); panel(sv1 + 0.1, 0.2, M.wall, true);
     for (const v of [ev0 - 0.12, ev1 + 0.15, sv1 + 0.1]) H.box((u0 - 0.3 + eu1) / 2, v, eu1 - u0 + 0.3, 0.25, 0, -1, top + 1.1);
+    // lit poster frames on the two outer faces of the stack (seen from the concourse)
+    H.tx.posters.forEach((pt, i) => {
+      if (i > 2) return;
+      const pu = u0 + 5 + i * 2.6, pm = ctx.mat.emissive('#ffffff', 0.9, { map: pt });
+      for (const [v, s] of [[ev0 - 0.12, -1], [sv1 + 0.3, 1]]) {
+        K.box(1.3, 1.9, 0.06, M.steelD, [pu, 1.95, v + s * 0.03]);
+        K.plane(1.16, 1.74, pm, [pu, 1.95, v + s * 0.064], [0, s > 0 ? 0 : Math.PI, 0]);
+      }
+    });
+    // stainless kick band along the foot of the stack
+    for (const v of [ev0 - 0.13, sv1 + 0.31]) boxAt(u0 - 0.3, eu1, 0, 0.18, v - 0.01, v + 0.01, M.steel);
     // railing around the opening on the platform (glass + rail), west end + the two long sides
     for (const [a0, a1, b0, b1] of [[hole.u0 - 0.05, hole.u0 + 0.05, hole.v0, hole.v1], [hole.u0, hole.u1, hole.v0 - 0.05, hole.v0 + 0.05], [hole.u0, hole.u1, hole.v1 - 0.05, hole.v1 + 0.05]]) {
       boxAt(a0, a1, top, top + 1.05, b0, b1, M.glass);

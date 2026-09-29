@@ -1,4 +1,4 @@
-// Around 桜都駅: the south station building (department store over the 中央口, the big station sign), the
+// Around 大阪駅: the south station building (department store over the 中央口, the big station sign), the
 // north tower, the enclosed viaduct sides, the station-front plaza + road, trees, and a skyline of towers.
 import * as THREE from 'three';
 import * as P from './plan.js';
@@ -74,9 +74,9 @@ export function buildCity(ctx, H) {
     const T = ctx.tex, F = T.FONTS;
     const nameTex = T.draw(1024, 256, (g, w, h) => {
       g.clearRect(0, 0, w, h);
-      g.fillStyle = '#0a5fb0'; T.roundRect(g, 10, 60, 136, 136, 18); g.fill(); g.fillStyle = '#fff'; g.font = `900 70px ${F.en}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('KR', 78, 130);
-      g.fillStyle = '#f6f6f2'; g.textAlign = 'left'; g.font = `900 150px ${F.sans}`; g.fillText('桜都駅', 190, 120);
-      g.font = `700 50px ${F.en}`; g.fillText('ŌTO STATION', 196, 218);
+      g.fillStyle = '#0072bc'; T.roundRect(g, 10, 60, 136, 136, 18); g.fill(); g.fillStyle = '#fff'; g.font = `italic 900 76px ${F.en}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('JR', 78, 130);
+      g.fillStyle = '#f6f6f2'; g.textAlign = 'left'; g.font = `900 150px ${F.sans}`; g.fillText('大阪駅', 190, 120);
+      g.font = `700 50px ${F.en}`; g.fillText('OSAKA STATION', 196, 218);
     }, { key: 'term.bigname' });
     K.box(40, 10, 0.4, M.band, [0, 21, SB.v1 + 0.25]);
     const n = K.plane(38, 9.5, mat.toon('#ffffff', { map: nameTex, transparent: true, paint: 0 }), [0, 21, SB.v1 + 0.47]); n.castShadow = false;

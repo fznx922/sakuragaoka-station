@@ -80,7 +80,7 @@ const LABELS = {
   environment: '地形と河川敷', street: '商店街の道', poles: '電柱と電線', railway: '線路と架線', station: '駅舎とホーム', plaza: '駅前広場',
   shopsA: 'コンビニ・喫茶・花屋・書店', shopsB: '和菓子・よろず屋・ラーメン・自転車店', houses: '住宅街', sakura: '桜並木', trains: '電車',
   crossing: '踏切', props: '自販機と小物', vehicles: '自転車と車', characters: '町の人々', petals: '花びら',
-  inari: '稲荷山と千本鳥居', terminal: '桜都駅と新幹線',
+  inari: '稲荷山と千本鳥居', terminal: '大阪駅と新幹線',
 };
 
 async function build() {
@@ -129,7 +129,7 @@ const VIEWS = {
   Digit4: { x: -12.8, z: -31.5, yaw: -8, pitch: 3, label: '踏切' },
   Digit5: { x: -20.0, z: -92.8, yaw: 160, pitch: -2, label: '河川敷' },
   Digit6: { ...L.INARI.arrive, label: '稲荷山', travel: true },
-  Digit7: { ...L.TERMINAL.arrive, label: '桜都駅 1・2番のりば', travel: true },
+  Digit7: { ...L.TERMINAL.arrive, label: '大阪駅 1・2番のりば', travel: true },
 };
 
 // ------------------------------------------------------------------ simulation

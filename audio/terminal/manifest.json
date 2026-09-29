@@ -1,0 +1,3 @@
+{
+  "_comment": "Map a sound name to an audio file in this folder to replace the synthesized sound, e.g. \"depart2\": \"osaka-2.mp3\". See README.md for the names."
+}

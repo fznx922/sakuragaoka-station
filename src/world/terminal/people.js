@@ -1,4 +1,4 @@
-// People of 桜都駅 (same characters system as the town): passengers waiting on the platforms (phones, watching the
+// People of 大阪駅 (same characters system as the town): passengers waiting on the platforms (phones, watching the
 // trains), platform staff doing the pointing check (指差確認) as trains leave, the gate attendant, and commuters
 // walking through the concourse. Deterministic idles; walkers follow straight back-and-forth paths.
 import * as THREE from 'three';

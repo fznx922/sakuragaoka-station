@@ -1,4 +1,4 @@
-// Furniture of 桜都駅: ticket machines (券売機) + the ticket office, in-gate shops (convenience store, 駅弁,
+// Furniture of 大阪駅: ticket machines (券売機) + the ticket office, in-gate shops (convenience store, 駅弁,
 // café), coin lockers, benches, vending machines, recycling bins, a Shinkansen waiting room; platform benches,
 // bins and vending machines, the platform doors (ホームドア) of 3・4番のりば and the Shinkansen platform fences,
 // whose gates slide open with the train doors.
@@ -22,7 +22,7 @@ export function buildFurniture(ctx, H) {
     g.fillStyle = '#1f6fbf'; g.fillRect(0, 0, w, h); g.fillStyle = '#f7f2e8'; g.fillRect(10, 10, w - 20, h * 0.52);
     const cols = ['#e2a33b', '#6aa5d6', '#7fbf6a', '#d85f5f', '#f0d060', '#9a7ad0', '#e9e4da'];
     for (let rr = 0; rr < 3; rr++) for (let c = 0; c < 6; c++) { g.fillStyle = cols[(rr * 3 + c) % 7]; g.fillRect(20 + c * 37, 22 + rr * 68, 26, 50); g.fillStyle = '#fff'; g.fillRect(20 + c * 37, 76 + rr * 68, 26, 8); }
-    g.fillStyle = '#fff'; g.font = `900 30px ${F.round}`; g.textAlign = 'center'; g.fillText('KR DRINK', w / 2, h * 0.68);
+    g.fillStyle = '#fff'; g.font = `900 30px ${F.round}`; g.textAlign = 'center'; g.fillText('JR DRINK', w / 2, h * 0.68);
     g.font = `700 20px ${F.sans}`; g.fillText('IC カードで買える', w / 2, h * 0.78);
   }, { key: 'term.vend' });
   const vending = (k) => { k.box(1.0, 1.83, 0.75, mat.toon('#e8e6e0', { paint: 0.03 }), [0, 0.915, 0]); k.plane(0.9, 1.5, mat.emissive('#ffffff', 0.95, { map: vendTex }), [0, 1.08, 0.376]); };
@@ -48,7 +48,7 @@ export function buildFurniture(ctx, H) {
     const u0 = 15, u1 = 31, v0 = 33, v1 = 38.5;
     K.box(u1 - u0, 3.2, v1 - v0, M.wall, [(u0 + u1) / 2, 1.6, (v0 + v1) / 2]);
     for (let u = u0 + 1.5; u < u1 - 1; u += 3.2) { K.box(2.6, 1.5, 0.05, M.glass, [u + 1.1, 1.5, v1 + 0.03]); K.plane(2.5, 1.4, M.warm, [u + 1.1, 1.5, v1 - 0.05]); }
-    K.plane(8, 0.9, signM({ text: 'きっぷうりば  KRチケットオフィス', sub: 'Ticket Office · Reservations', bg: '#1f6fbf', key: 'office' }), [(u0 + u1) / 2, 2.75, v1 + 0.02]);
+    K.plane(8, 0.9, signM({ text: 'みどりの窓口', sub: 'JR Ticket Office · Reservations', bg: '#2f9a4a', key: 'office' }), [(u0 + u1) / 2, 2.75, v1 + 0.02]);
     H.box((u0 + u1) / 2, (v0 + v1) / 2, u1 - u0, v1 - v0, 0, -1, 3.3);
   }
   for (let i = 0; i < 5; i++) place((k) => {
@@ -71,7 +71,7 @@ export function buildFurniture(ctx, H) {
   };
   shop(14, 26, 'ステーションマート', 'Station Mart · open 24h', '#2f8a4f', 'mart');
   shop(2, 11, '駅弁 桜膳', 'Ekiben · Bento', '#b8453a', 'bento');
-  shop(-12, -2, 'KR カフェ', 'Café', '#5a4032', 'cafe');
+  shop(-12, -2, 'カフェ 梅田', 'Café Umeda', '#5a4032', 'cafe');
   for (const [u, v] of [[4, 6], [4, -6], [10, 6], [10, -6]]) place((k) => bench(k, 2.4), u, 0, v, (u === 4 ? 1 : -1) * Math.PI / 2, 2.4, 0.6, 1);
   place(vending, -33.3, 0, 26, Math.PI / 2, 1.0, 0.75); place(vending, -33.3, 0, 24.9, Math.PI / 2, 1.0, 0.75);
   place(bins, -33.4, 0, 22.4, Math.PI / 2, 2.0, 0.55, 1.1);

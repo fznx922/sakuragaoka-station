@@ -87,9 +87,9 @@ centres `L.TRAIN_DOORS_X` = 2, 8, 14, 20, 26, 32), timetable `L.SCHEDULE` (120 s
 passes the crossing while train A waits at platform 1 with doors open). Bicycle geometry contract: `L.BIKE`.
 Station also owns `STATION.sideYard` (east of the building) and `STATION.westYard` (west, keep low).
 
-### 3b. Separate areas (稲荷山 / `L.INARI`, 桜都駅 / `L.TERMINAL`)
+### 3b. Separate areas (稲荷山 / `L.INARI`, 大阪駅 / `L.TERMINAL`)
 
-The world can hold more than one walkable area (`L.REGIONS`, `L.regionAt(x)`); `terminal` builds **桜都駅** at
+The world can hold more than one walkable area (`L.REGIONS`, `L.regionAt(x)`); `terminal` builds **大阪駅** (JR Osaka, a personal fan recreation) at
 x = −4000 the same way (`src/world/terminal/plan.js`, flat ground, raised platforms as walk boxes). `inari` builds **稲荷山**, a mountain shrine modelled on
 Fushimi Inari Taisha, around `L.INARI.origin` (x = 4000), far outside the town: fog hides each area from
 the other. Rules for areas like it:
@@ -105,7 +105,7 @@ the other. Rules for areas like it:
   town / crowd).
 * Travel: `ctx.travel(pose, {toast})` (main.js) fades out, teleports and fades back in; `ctx.toast(text)`
   shows the HUD location sign. Entrances: praying (standing still, facing the hokora) at the E6 shrine,
-  key 6; walking back out of the approach returns to the E6 shrine. 桜都駅: step through an open door of train A
+  key 6; walking back out of the approach returns to the E6 shrine. 大阪駅: step through an open door of train A
   at platform 1 (or key 7); board the track-1 train there to return. `ctx.travel` honours `pose.y`, and HUD areas
   may carry `y0/y1` (the platforms are stacked above the concourse).
 * HUD names: area rectangles are prepended to `L.AREAS`.
@@ -121,7 +121,7 @@ the other. Rules for areas like it:
   vending machines, konbini sign) — the rest is soft pastel / neutral.
 * Surfaces seen up close get a light canvas "hand-painted" detail texture (soft stains, uneven wash,
   simplified wood grain, tile lines, cracks) — never photographic noise.
-* Text: real, natural Japanese (kanji/kana + small romaji where appropriate). **Fictional brands only** —
+* Text: real, natural Japanese (kanji/kana + small romaji where appropriate). **Fictional brands only** (exception: the 大阪駅 area, a personal fan recreation with real JR names) —
   never real company names/logos. Check text is not mirrored (planes face +Z; don't scale −1).
 * Warm interior light (`mat.emissive('#ffd9a0', 0.9..1.4)` panels) behind glass; cool daylight outside.
 * Scale sanity: door 2.0×0.85 m; storey 2.9 m; ceiling 2.5 m; handrail 0.9–1.1 m; bench seat 0.44 m;
@@ -202,11 +202,13 @@ ctx.services.shopsA  = { cafeWindow: { x, y, z, rotY, w, h }, cafeTables: [{ x, 
 * **audio**: `src/core/audio.js` — synthesized WebAudio implementation of the documented API.
 * **inari**: the whole 稲荷山 area (§3b): terrain + painted ridges, stone stairs, ~800 tunnel torii, 門前町 shops,
   楼門 / 外拝殿 / 本殿, 奥社, 新池, tea houses, 四ツ辻 view, 一ノ峰 お塚, forest, city basin. Publishes `services.inari`.
-* **terminal**: the whole 桜都駅 area (§3b). Its contents are:
+* **terminal**: the whole 大阪駅 area (§3b). Its contents are:
   * the concourse and IC gates (plus the Shinkansen transfer gate), the track deck, 3 island and 2 Shinkansen platforms, stairs and animated escalators, and the dome roof;
+  * platform frames and canopies, and the overhead catenary (`canopy.js`); every sign hangs from a frame, a duct or the ceiling;
   * signs and live departure boards, shops and furniture, platform doors;
-  * commuter EMUs and 16-car Shinkansen driven by a pure timetable (`plan.convState` / `shinState`, a function of sim time);
-  * ops: approach and departure melodies and spoken announcements (only on the player's platform);
+  * commuter EMUs and 16-car Shinkansen driven by a pure timetable (`plan.convState` / `shinState`, a function of sim time). Each train is one vertex-coloured mesh on a painted atlas, plus the door leaves and lights;
+  * `crowd.js`: ~150 instanced passengers whose trips (walk in, gate, stairs or escalator, queue, board; or alight and leave) are pure functions of the timetable;
+  * ops: per-track approach and departure melodies, the Shinkansen bell, and spoken announcements (only on the player's platform). `audio.useFile(name, url)` swaps in a recording listed in `audio/terminal/manifest.json`;
   * people, and the surrounding city.
 
   Publishes `services.terminal`.

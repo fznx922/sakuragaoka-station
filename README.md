@@ -17,21 +17,29 @@ A walkable, first-person **anime cel-shaded Japanese suburban sakura station** b
 | ![千本鳥居](docs/images/inari-senbon.jpg) | ![Torii tunnel, coming down](docs/images/inari-tunnel.jpg) |
 | ![楼門](docs/images/inari-romon.jpg) | ![四ツ辻 view](docs/images/inari-view.jpg) |
 
-**桜都駅 (Ōto Station)** — a big JR-style city terminal in the spirit of Osaka Station (fictional operator KR):
+**大阪駅 (JR Osaka Station)** — a big JR West terminal, a personal fan recreation of Osaka Station with a Shinkansen side:
 
 | | |
 |---|---|
-| ![中央改札口](docs/images/terminal-gates.jpg) | ![1・2番のりば](docs/images/terminal-platform.jpg) |
-| ![新幹線ホーム](docs/images/terminal-shinkansen.jpg) | ![駅舎](docs/images/terminal-facade.jpg) |
+| ![中央改札口](docs/images/terminal-gates.jpg) | ![2番のりば 新快速](docs/images/terminal-platform.jpg) |
+| ![3・4番のりば, queues at the platform doors](docs/images/terminal-queue.jpg) | ![新幹線 のぞみ](docs/images/terminal-shinkansen.jpg) |
+| ![駅舎](docs/images/terminal-facade.jpg) | |
 
 ## Features
 
 - **Cel-shaded look** – toon ramp materials, screen-space colour-aware outlines, blue-violet shadows, bloom, film grading, light leaks, painted sky with wind-stretched clouds.
 - **A whole small town** – station building with a fully modelled interior and office, two platforms, a level crossing with working barriers and bells, a shopping street (konbini, café, flower shop, bookstore, wagashi shop, ramen shop, general store, bicycle shop — all enterable and furnished), houses, a shrine, a river levee lined with cherry trees, distant fields and mountains.
 - **稲荷山 (Inariyama)** – a second walkable area modelled on Fushimi Inari Taisha: a shop-lined approach, the great torii, the two-storey 楼門 gate with key / jewel guardian foxes, the worship and main halls, the forked **千本鳥居** tunnels (~800 torii whose uphill faces carry black donor inscriptions you see on the way down), the 奥社 with fox-face ema, a torii-tunnel trail past 新池 and the tea houses up to the **四ツ辻** view over the city, and a summit loop past お塚 stone mounds — through cedar, bamboo and mountain-cherry woods. Pray at the town's little Inari shrine (or press 6) to go there; walk back out of the approach to return.
-- **桜都駅 (Ōto Station)** – a third area: a big terminal modelled on JR Osaka Station. There is a ground-floor concourse with ticket machines, lockers, shops and 13 IC ticket gates. The gates beep like the real ones (one pip for an IC card, a double pip for a commuter pass, a triple pip for a low balance, and the occasional red-flap error). A blue 新幹線のりかえ口 transfer gate leads to the Shinkansen side. Stairs and moving escalators go up to three island platforms under a huge glass-and-truss dome, plus two Shinkansen platforms with platform-screen fences. Trains run on a fixed timetable: commuter EMUs in four liveries on tracks 1–6, 16-car Shinkansen that pull in and out on tracks 13/14, and non-stop Shinkansen that thunder through the middle tracks. The station has 駅名標, hanging track signs, live LCD departure boards (JP/EN), passengers and staff doing 指差確認. Each island plays its own approach and departure melody (original compositions in the 発車メロディ style), with spoken Japanese approach, arrival and door-closing announcements and Shinkansen chimes. To get there, ride train A: step through an open door at Sakuragaoka platform 1, or press 7. Board the 桜川線 train on track 1 to ride home.
+- **大阪駅 (JR Osaka Station)** – a third area, a fan recreation of JR Osaka Station:
+  - **Concourse**: ticket machines, みどりの窓口, lockers, shops and 13 IC ticket gates. The gates beep like the real ones (one, two or three pips, and the occasional red-flap error). A blue 新幹線のりかえ口 transfer gate leads to the Shinkansen side.
+  - **Platforms**: stairs and moving escalators go up to three island platforms under a huge glass-and-truss dome. Steel platform frames carry the lights, speakers, clocks, track signs and LCD boards; canopies cover the platform ends. There are also two Shinkansen platforms with platform-screen fences, and overhead catenary on lattice portals over every track.
+  - **Trains**: real JR West lines and destinations (JR京都線 新快速 米原, JR神戸線 姫路, 大阪環状線, JRゆめ咲線 桜島), plus the fictional 桜川線 home to 桜ヶ丘. Commuter trains are detailed JR West-style stainless cars with cab fronts, pantographs, lit interiors behind the windows and doors that open on the platform side. The Shinkansen are N700-style 16-car のぞみ that stop on tracks 13/14, while others race through the middle tracks.
+  - **People**: a timetable-driven crowd of ~150. They walk in from the street, tap through the gates, ride the escalators (standing on the right, this is Osaka), queue in pairs at the door markers, and board. Others get off and head for the exits.
+  - **Signage**: JR West style 駅名標 and navy hanging signs, plus live departure boards (JP/EN).
+  - **Sound**: every track has its own approach and departure melody (original compositions in the JR West style; drop real recordings into `audio/terminal/` to replace them, see its README). Shinkansen platforms have the electronic departure bell. Japanese announcements are spoken.
+  - **Getting there**: step through an open door of train A at Sakuragaoka platform 1, or press 7. Board the 桜川線 train on track 1 to ride home.
 - **Living scene** – two trains on a 2-minute timetable (arrive, open doors, depart through the crossing), falling petals with wind and train gusts, petal drifts and petal rafts on the river, townspeople, cats and sparrows.
-- **Synthesized audio** – wind, birds, crossing bell, train motors and rail joints, door chimes, departure / approach melodies, IC gate beeps, Shinkansen run-by, station crowd, and Japanese announcements through the browser's speech synthesis. It is all WebAudio, with no sound files.
+- **Synthesized audio** – wind, birds, crossing bell, train motors and rail joints, door chimes, departure / approach melodies, IC gate beeps, Shinkansen run-by, station crowd, and Japanese announcements through the browser's speech synthesis. It is all WebAudio, with no sound files (optional recordings can replace the station melodies).
 - **Performance** – automatic static batching (vertex-colour material merging + texture atlasing); ~4 M triangles at 60+ fps on a desktop GPU.
 
 ## Run
@@ -55,7 +63,7 @@ Then open <http://localhost:5173>. An internet connection is needed for three.js
 | F | Toggle fly mode |
 | 1 – 5 | Jump to Street / Plaza / Platform / Crossing / Levee |
 | 6 | Travel to 稲荷山 — or stand still for a moment facing the little hokora of the Inari shrine on the main street; walk back out of the approach (west) to return |
-| 7 | Travel to 桜都駅 — or step through an open door of the train at Sakuragaoka platform 1; board the 桜川線 train on track 1 (1番のりば) there to ride back |
+| 7 | Travel to 大阪駅 — or step through an open door of the train at Sakuragaoka platform 1; board the 桜川線 train on track 1 (1番のりば) there to ride back |
 | R | Back to the start of the shopping street |
 | H | Hide UI |
 | M | Mute |
@@ -75,8 +83,10 @@ src/world/<module>.js   scene modules: environment, street, poles, railway, stat
                         vehicles, characters, petals, inari, terminal (+ helper folders of the same name)
 src/world/inari/        稲荷山: plan.js (pure terrain / paths / stairs, used by layout.heightAt),
                         terrain, paths, torii, arch (roofs), shrine, town, mountain, forest, props
-src/world/terminal/     桜都駅: plan.js (pure layout + timetable), structure, roof, gates, furniture,
-                        signs, trains, city, ops (melodies / announcements), people, tex, mats
+src/world/terminal/     大阪駅: plan.js (pure layout + timetable), structure, roof, canopy (platform frames,
+                        catenary), gates, furniture, signs, trains, crowd, people, city,
+                        ops (melodies / announcements), tex, mats
+audio/terminal/         optional recordings that replace station sounds (manifest.json + README)
 src/world/lib/          shared generators (smooth cel-shaded foliage)
 tools/                  dev server, headless checks & screenshots
 docs/DESIGN.md          architecture / module contract
@@ -96,4 +106,4 @@ URL parameters: `?only=station,plaza` (build a subset; `?only=inari` builds just
 
 ## License
 
-[MIT](LICENSE). All brands, stations and place names in the scene are fictional.
+[MIT](LICENSE). The town, its shops and 稲荷山 use fictional names. The 大阪駅 area is a personal, non-commercial fan recreation that uses real JR names and logos, which belong to their owners.

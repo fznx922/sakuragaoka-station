@@ -403,11 +403,14 @@ function tune(bpm, mel, chords, { lead = 'cel', sparkle = null, lead2 = 'box', c
   for (const [e, ch, b] of chords) { for (const m of ch) out.push([e * E + 0.004, 'ep', m, chordVel]); if (b) out.push([e * E, 'bass', b, 0.34]); }
   return out;
 }
-// 桜都駅 — original station melodies (接近 = approach ~4 s, 発車 = departure ~7 s), one set per island platform
+// 大阪駅 (terminal) — original station melodies in the JR West style (接近 = approach ~4 s, 発車 = departure ~7 s), one per track
 const APPROACH = {
   A: tune(132, [[0, 74], [1, 78], [2, 81], [3, 86], [4, 85], [6, 81], [7, 78], [8, 79], [9, 81], [10, 83], [11, 85], [12, 86]], [[0, [62, 66, 69], 50], [4, [61, 64, 69], 45], [8, [59, 62, 67], 43], [12, [62, 66, 69], 50]], { sparkle: [[14, 98]] }),
   B: tune(120, [[0, 72], [1, 77], [2, 81], [4, 79], [5, 77], [6, 74], [8, 76], [9, 79], [10, 84], [12, 81]], [[0, [65, 69, 72], 53], [4, [62, 65, 70], 46], [8, [64, 67, 72], 48], [12, [65, 69, 72], 53]], { lead: 'vib', sparkle: [[13, 93]] }),
   C: tune(140, [[0, 79], [1, 83], [2, 86], [3, 83], [4, 88], [6, 86], [7, 83], [8, 81], [9, 83], [10, 84], [11, 86], [12, 91]], [[0, [67, 71, 74], 55], [4, [64, 67, 72], 48], [8, [62, 66, 69], 50], [12, [67, 71, 74], 43]]),
+  D: tune(126, [[0, 76], [1, 79], [2, 84], [4, 83], [5, 79], [6, 76], [8, 77], [9, 81], [10, 84], [12, 88]], [[0, [64, 67, 72], 48], [4, [62, 67, 71], 43], [8, [65, 69, 72], 41], [12, [64, 67, 72], 48]], { sparkle: [[14, 100]] }),
+  E: tune(116, [[0, 69], [1, 73], [2, 76], [3, 81], [4, 80], [6, 76], [8, 78], [9, 81], [10, 85], [12, 81]], [[0, [61, 64, 69], 45], [4, [64, 68, 71], 52], [8, [62, 66, 69], 50], [12, [61, 64, 69], 45]], { lead: 'vib' }),
+  F: tune(138, [[0, 84], [1, 79], [2, 76], [3, 79], [4, 84], [6, 86], [7, 88], [8, 86], [9, 84], [10, 81], [12, 84]], [[0, [60, 64, 67], 48], [4, [65, 69, 72], 53], [8, [62, 65, 69], 50], [12, [60, 64, 67], 48]], { sparkle: [[14, 96]] }),
 };
 const DEPARTS = {
   A: tune(136, [[0, 75], [1, 79], [2, 82], [3, 87], [4, 86], [5, 84], [6, 82], [8, 84], [9, 82], [10, 79], [11, 77], [12, 79], [14, 75],
@@ -417,6 +420,12 @@ const DEPARTS = {
     [[0, [69, 73, 76], 57], [4, [68, 71, 76], 52], [8, [66, 69, 73], 54], [12, [64, 68, 71], 52], [16, [62, 66, 69], 50], [20, [64, 68, 71], 52], [24, [61, 64, 69], 45], [28, [69, 73, 76], 57]], { lead: 'vib', sparkle: [[30, 93]] }),
   C: tune(144, [[0, 72], [1, 76], [2, 79], [3, 84], [4, 83], [5, 79], [6, 76], [7, 79], [8, 81], [10, 77], [11, 81], [12, 84], [14, 83], [16, 84], [17, 86], [18, 88], [19, 91], [20, 89], [21, 86], [22, 84], [23, 86], [24, 83], [26, 79], [27, 83], [28, 84]],
     [[0, [64, 67, 72], 48], [4, [62, 67, 71], 47], [8, [64, 69, 72], 45], [12, [65, 69, 72], 41], [16, [64, 67, 72], 48], [20, [65, 69, 74], 50], [24, [62, 67, 71], 43], [28, [64, 67, 72], 48]], { sparkle: [[30, 96]] }),
+  D: tune(140, [[0, 79], [1, 81], [2, 83], [3, 86], [4, 88], [6, 86], [7, 83], [8, 84], [10, 81], [11, 79], [12, 81], [14, 76], [16, 77], [17, 79], [18, 81], [19, 84], [20, 86], [22, 84], [23, 81], [24, 83], [25, 84], [26, 86], [27, 88], [28, 91]],
+    [[0, [67, 71, 74], 55], [4, [64, 67, 71], 52], [8, [60, 64, 67], 48], [12, [62, 65, 69], 50], [16, [65, 69, 72], 53], [20, [62, 67, 71], 50], [24, [64, 67, 72], 48], [28, [67, 71, 74], 55]], { sparkle: [[30, 98], [31, 103]] }),
+  E: tune(120, [[0, 74], [2, 78], [3, 81], [4, 83], [6, 81], [7, 78], [8, 76], [10, 74], [11, 76], [12, 78], [14, 74], [16, 79], [18, 83], [19, 81], [20, 79], [22, 78], [23, 76], [24, 78], [26, 81], [28, 86]],
+    [[0, [62, 66, 69], 50], [4, [59, 62, 66], 47], [8, [64, 67, 71], 52], [12, [62, 66, 69], 50], [16, [67, 71, 74], 55], [20, [64, 69, 73], 45], [24, [66, 69, 74], 50], [28, [62, 66, 69], 50]], { lead: 'vib', sparkle: [[30, 98]] }),
+  F: tune(150, [[0, 72], [1, 72], [2, 76], [3, 79], [4, 84], [5, 83], [6, 79], [7, 76], [8, 77], [9, 77], [10, 81], [11, 84], [12, 86], [14, 84], [16, 83], [17, 81], [18, 79], [19, 81], [20, 83], [21, 84], [22, 86], [24, 88], [26, 86], [27, 84], [28, 84]],
+    [[0, [60, 64, 67], 48], [4, [64, 67, 72], 52], [8, [65, 69, 72], 53], [12, [62, 65, 69], 50], [16, [67, 71, 74], 55], [20, [64, 67, 72], 48], [24, [65, 69, 72], 53], [28, [60, 64, 67], 48]], { lead: 'box', lead2: 'cel', sparkle: [[30, 96], [31, 100]] }),
 };
 const SHIN_CHIME = [[0, 'vib', 79, 0.9], [0.21, 'vib', 84, 0.9], [0.42, 'vib', 88, 0.92], [0.63, 'vib', 91, 1], [0.63, 'box', 103, 0.2], [0.63, 'ep', 72, 0.2], [0.63, 'ep', 76, 0.2]];
 const SHIN_DEPART = tune(150, [[0, 81], [1, 85], [2, 88], [3, 93], [4, 92], [6, 88], [7, 85], [8, 86], [9, 88], [10, 90], [12, 93]], [[0, [69, 73, 76], 57], [4, [66, 69, 73], 54], [8, [62, 66, 69], 50], [12, [64, 68, 71], 52]], { lead: 'box', lead2: 'cel', sparkle: [[14, 105]] });
@@ -610,7 +619,47 @@ export function createAudio(options = {}) {
     shinChime: { ref: 8, range: 260, gain: 0.15, wet: 'hi', pa: true, notes: () => SHIN_CHIME },
     shinDepart: { ref: 8, range: 260, gain: 0.14, wet: 'hi', pa: true, notes: () => SHIN_DEPART },
     shinDoor: { ref: 4, range: 60, gain: 0.2, wet: 'lo', notes: () => SHIN_DOOR },
+    approachD: { ref: 8, range: 200, gain: 0.13, wet: 'hi', pa: true, notes: () => APPROACH.D },
+    approachE: { ref: 8, range: 200, gain: 0.13, wet: 'hi', pa: true, notes: () => APPROACH.E },
+    approachF: { ref: 8, range: 200, gain: 0.13, wet: 'hi', pa: true, notes: () => APPROACH.F },
+    departD: { ref: 8, range: 220, gain: 0.14, wet: 'hi', pa: true, notes: () => DEPARTS.D },
+    departE: { ref: 8, range: 220, gain: 0.14, wet: 'hi', pa: true, notes: () => DEPARTS.E },
+    departF: { ref: 8, range: 220, gain: 0.14, wet: 'hi', pa: true, notes: () => DEPARTS.F },
+    /** electronic departure bell (発車ベル, the warbling "プルルル" of the Tōkaidō Shinkansen platforms), ~6 s */
+    departBell: { ref: 8, range: 260, gain: 0.13, wet: 'hi', pa: true, run: bellVoice },
   };
+  // optional recordings that replace a sound (api.useFile): name -> AudioBuffer, and name -> url before start()
+  const FILES = new Map(), FILE_URLS = new Map();
+  function loadFile(name, url) {
+    if (!ac || failed || typeof fetch !== 'function') return;
+    fetch(url).then(r => (r.ok ? r.arrayBuffer() : Promise.reject(new Error(r.status)))).then(b => ac.decodeAudioData(b)).then(ab => { FILES.set(name, ab); }).catch(e => warnOnce('file:' + name, 'audio file not loaded', url, String(e)));
+  }
+  /** play a user-supplied recording through the same spatial / PA chain */
+  function playFile(name, def, o, pos, dist, vol) {
+    const ab = FILES.get(name), now = ac.currentTime;
+    const fade = pos ? farFade(dist, def.range || 200) : 1;
+    const v = voice('sfx', { pos, dist, gain: vol * (def.fileGain ?? 0.5) * fade, ref: def.ref || 8, roll: def.roll || 1, wet: pos && def.wet ? (def.wet === 'hi' ? N.wetHi : N.wetLo) : null, pa: false, pan: Number(o.pan) || 0, hq: true });
+    if (!v) return null;
+    v.name = name; v.base = vol * (def.fileGain ?? 0.5) * fade; v.pos = pos ? { x: pos.x, y: pos.y, z: pos.z } : null;
+    const s = ac.createBufferSource(); s.buffer = ab; s.connect(v.in); s.start(now + 0.01); v.srcs.push(s); v.end = now + ab.duration + 0.2;
+    if (def.speech && o.text) speakLater(String(o.text), pos, vol, def.speech);
+    return { stop: () => { try { killVoice(v); } catch (e) { /* */ } } };
+  }
+  function bellVoice({ pos, dist, vol, t0 }) {
+    const def = SFX.departBell, dur = 6.2;
+    const v = voice('sfx', { pos, dist, gain: vol * def.gain, ref: def.ref, wet: pos ? N.wetHi : null, pa: true, hq: true });
+    if (!v) return null;
+    v.name = 'departBell'; v.base = vol * def.gain; v.pos = pos ? { x: pos.x, y: pos.y, z: pos.z } : null;
+    const a = OSC('square', 1318), b = OSC('square', 1568), gate = OSC('square', 16);
+    const aG = G(0.5), bG = G(0.5), gA = G(0.5), gB = G(-0.5), env = G(0), bp = BQ('bandpass', 1450, 0.9), lp = BQ('lowpass', 5200, 0.7);
+    gate.connect(gA); gA.connect(aG.gain); gate.connect(gB); gB.connect(bG.gain);
+    a.connect(aG); b.connect(bG); aG.connect(bp); bG.connect(bp); bp.connect(lp); lp.connect(env); env.connect(v.in);
+    env.gain.setValueAtTime(0, t0); env.gain.linearRampToValueAtTime(1, t0 + 0.03); env.gain.setValueAtTime(1, t0 + dur); env.gain.linearRampToValueAtTime(0, t0 + dur + 0.06);
+    for (const o of [a, b, gate]) { o.start(t0); o.stop(t0 + dur + 0.1); }
+    v.srcs.push(a, b, gate); v.nodes.push(aG, bG, gA, gB, env, bp, lp);
+    v.end = t0 + dur + 0.3;
+    return { stop: () => { try { killVoice(v); } catch (e) { /* */ } } };
+  }
   function play(name, o) {
     try {
       if (SILENT.has(name)) return null;
@@ -624,13 +673,14 @@ export function createAudio(options = {}) {
       const vol = clamp(o.volume === undefined ? 1 : Number(o.volume) || 0, 0, 4);
       if (vol <= 0) return null;
       const now = ac.currentTime, t0 = now + 0.01;
+      if (FILES.has(name)) return playFile(name, def, o, pos, dist, vol);
       const fade = pos ? farFade(dist, def.range) : 1;
       if (def.run) return def.run({ pos, dist, vol: vol * fade, t0 });
       let hold = 0;
       if (name === 'announce' || name === 'speak') {   // the platform melody ducks under an announcement on the same platform, then comes back
         hold = def.speech + (o.text ? 0.6 + 0.14 * String(o.text).length : 0.9);
         for (const w of voices) {
-          if (!/^(departMelody|depart[ABC]|shinDepart)$/.test(w.name) || w.dying || (pos && w.pos && Math.hypot(w.pos.x - pos.x, w.pos.z - pos.z) > 45)) continue;
+          if (!/^(departMelody|depart[A-F]|departBell|shinDepart)$/.test(w.name) || w.dying || (pos && w.pos && Math.hypot(w.pos.x - pos.x, w.pos.z - pos.z) > 45)) continue;
           glide(w.out.gain, w.base * 0.3, 0.2, now);
           try { w.out.gain.setTargetAtTime(w.base, now + hold, 0.5); } catch (e) { /* */ }
         }
@@ -1107,6 +1157,7 @@ export function createAudio(options = {}) {
       for (const h of handles) if (!h.impl && !h.stopped) { try { bind(h); } catch (e) { warnOnce('bind:' + h.name, 'loop failed', h.name, e); } }
       if (!offline) { if (ac.state !== 'running' && !muted) ac.resume().catch(() => {}); hookPage(); if (muted) applyMute(); }
       initSpeech();
+      for (const [n, u] of FILE_URLS) loadFile(n, u);
     } catch (e) {
       warnOnce('start', 'start failed', e);
       failed = true; N = null;
@@ -1191,6 +1242,9 @@ export function createAudio(options = {}) {
     /** level of an ambient bed ('wind' | 'birds' | 'town' | 'crowd'), e.g. per area; safe before start() */
     setAmbience(name, v, rampS = 1.5) { try { if (!hasOwn(ambVol, name)) return; ambVol[name] = clamp(Number(v) || 0, 0, 2); const h = ambH[name]; if (h) h.setVolume(ambVol[name], rampS); } catch (e) { /* */ } },
     names: { loops: Object.keys(LOOPS), oneShots: Object.keys(SFX) },
+    /** replace a one-shot with a recording (e.g. a real station melody you own): fetched + decoded once the audio
+     *  starts; until it has loaded, and if it fails, the synthesized sound plays. Returns false for unknown names. */
+    useFile(name, url) { try { if (!hasOwn(SFX, name) || !url) return false; FILE_URLS.set(name, url); if (ac && !failed) loadFile(name, url); return true; } catch (e) { return false; } },
     meter() {
       try {
         if (!N || !N.meter) return { rms: 0, peak: 0 };

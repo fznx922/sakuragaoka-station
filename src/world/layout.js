@@ -41,7 +41,7 @@ export const INARI = {
   /** true for world x inside the Inari region (everything east of x = origin - 1500) */
   contains: (x) => INARI_PLAN.isInari(x),
 };
-// ---------------------------------------------------------------- 桜都駅 (Ōto) — a big JR-style terminal far west
+// ---------------------------------------------------------------- 大阪駅 — a big JR terminal far west
 // Built by the terminal module (src/world/terminal/plan.js). Reached by boarding the train at platform 1, or key 7.
 export const TERMINAL = {
   origin: TERMINAL_PLAN.ORIGIN,

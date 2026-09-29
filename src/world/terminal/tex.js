@@ -1,5 +1,5 @@
-// Canvas textures for 桜都駅 (flooring, tactile paving, panels, the 駅名標, hanging signs, fare chart,
-// posters, building windows). Fictional operator KR (関西旅客鉄道) — never real brands.
+// Canvas textures for 大阪駅 (flooring, tactile paving, panels, the 駅名標, hanging signs, fare chart,
+// posters, building windows) in the JR West house style (a personal fan recreation).
 import * as P from './plan.js';
 
 export function makeTextures(ctx) {
@@ -60,25 +60,38 @@ export function makeTextures(ctx) {
   }, { key: 'term.win.' + key, repeat: [1, 1] });
   const winBlue = windows('#8fb0cc', 'blue'), winGrey = windows('#9aa6b3', 'grey'), winTeal = windows('#86b5b8', 'teal');
 
-  // ---- 駅名標 (station name board), KR style: white, big kanji, kana above, romaji, prev / next underneath
-  const nameBoard = (prev, next, key) => T.draw(1024, 384, (g, w, h) => {
-    g.fillStyle = '#f7f6f2'; g.fillRect(0, 0, w, h);
-    g.fillStyle = '#0a5fb0'; g.fillRect(0, h - 104, w, 104);
-    // station number badge
-    g.fillStyle = '#fff'; g.strokeStyle = '#0a5fb0'; g.lineWidth = 10; T.roundRect(g, 46, 70, 112, 112, 18); g.fill(); g.stroke();
-    g.fillStyle = '#0a5fb0'; g.font = `900 34px ${F.en}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('KR', 102, 106); g.font = `900 44px ${F.en}`; g.fillText('A01', 102, 150);
-    g.fillStyle = '#2b2b33'; g.font = `700 36px ${F.sans}`; g.fillText(P.NAME.kana, w / 2, 58);
-    T.fitText(g, P.NAME.kanji, w / 2, 148, 520, 128, F.sans, 900);
-    g.fillStyle = '#4a4a55'; g.font = `600 38px ${F.en}`; g.fillText(P.NAME.en, w / 2, 232);
-    g.fillStyle = '#fff'; g.font = `700 40px ${F.sans}`; g.textAlign = 'left'; g.fillText('◀ ' + prev[0], 40, h - 64); g.font = `500 26px ${F.en}`; g.fillText(prev[1], 76, h - 26);
-    g.textAlign = 'right'; g.font = `700 40px ${F.sans}`; g.fillText(next[0] + ' ▶', w - 40, h - 64); g.font = `500 26px ${F.en}`; g.fillText(next[1], w - 76, h - 26);
+  // ---- 駅名標 (station name board), JR West style: white board, the station-number badge in the line colour,
+  // big kanji with hiragana above and romaji below, the line-colour band with the neighbouring stations
+  const nameBoard = (prev, next, key, o = {}) => T.draw(1024, 384, (g, w, h) => {
+    const lc = o.color || '#0072bc', num = o.num || P.NAME.no.replace('JR-', '');
+    g.fillStyle = '#fbfbf8'; g.fillRect(0, 0, w, h);
+    g.fillStyle = lc; g.fillRect(0, h - 108, w, 108);
+    g.fillStyle = 'rgba(0,0,0,0.12)'; g.fillRect(0, h - 108, w, 4);
+    // station number badge: JR on top, line letter + number in a line-colour frame
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    if (!o.noNum) {
+      g.fillStyle = '#fff'; g.strokeStyle = lc; g.lineWidth = 11; T.roundRect(g, 44, 52, 124, 144, 16); g.fill(); g.stroke();
+      g.fillStyle = lc; g.fillRect(44, 52, 124, 36);
+      g.fillStyle = '#fff'; g.font = `900 28px ${F.en}`; g.fillText('JR', 106, 71);
+      g.fillStyle = '#2b2b33'; g.font = `900 46px ${F.en}`; g.fillText(num[0], 106, 118); g.font = `900 40px ${F.en}`; g.fillText(num.slice(1), 106, 164);
+    }
+    // JR mark top right
+    g.fillStyle = '#0072bc'; T.roundRect(g, w - 132, 40, 88, 60, 12); g.fill(); g.fillStyle = '#fff'; g.font = `900 40px ${F.en}`; g.fillText('JR', w - 88, 72);
+    g.fillStyle = '#2b2b33'; g.font = `700 38px ${F.sans}`; g.fillText(o.kana || P.NAME.kana, w / 2, 52);
+    T.fitText(g, o.kanji || P.NAME.kanji, w / 2, 140, 560, 128, F.sans, 900);
+    g.fillStyle = '#44444f'; g.font = `600 40px ${F.en}`; g.fillText(o.en || P.NAME.en, w / 2, 232);
+    g.fillStyle = '#fff'; g.textBaseline = 'middle';
+    g.textAlign = 'left'; g.font = `700 42px ${F.sans}`; g.fillText('◀ ' + prev[0], 36, h - 68); g.font = `500 26px ${F.en}`; g.fillText(prev[1] + (prev[2] ? '  ' + prev[2] : ''), 78, h - 28);
+    g.textAlign = 'right'; g.font = `700 42px ${F.sans}`; g.fillText(next[0] + ' ▶', w - 36, h - 68); g.font = `500 26px ${F.en}`; g.fillText((next[2] ? next[2] + '  ' : '') + next[1], w - 78, h - 28);
   }, { key: 'term.name.' + key });
   // ---- hanging signs: dark panel, white text (+ small english), optional yellow badge (exit) or number badges
   const sign = (o) => T.draw(o.w || 1024, o.h || 192, (g, w, h) => {
-    g.fillStyle = o.bg || '#2d3038'; g.fillRect(0, 0, w, h);
+    g.fillStyle = o.bg || '#27324a'; g.fillRect(0, 0, w, h);
+    g.fillStyle = 'rgba(255,255,255,0.08)'; g.fillRect(0, 0, w, 3); g.fillStyle = 'rgba(0,0,0,0.25)'; g.fillRect(0, h - 3, w, 3);
     let x = 34;
-    for (const b of o.badges || []) { // coloured number / line badges
-      g.fillStyle = b.bg; T.roundRect(g, x, h * 0.18, h * 0.64, h * 0.64, 12); g.fill();
+    for (const b of o.badges || []) { // coloured number / line badges (round = track number, square = line symbol)
+      g.fillStyle = b.bg; if (b.round) { g.beginPath(); g.arc(x + h * 0.32, h * 0.5, h * 0.32, 0, 6.3); g.fill(); } else { T.roundRect(g, x, h * 0.18, h * 0.64, h * 0.64, 12); g.fill(); }
+      if (b.ring) { g.strokeStyle = b.ring; g.lineWidth = 6; g.beginPath(); g.arc(x + h * 0.32, h * 0.5, h * 0.3, 0, 6.3); g.stroke(); }
       g.fillStyle = b.fg || '#fff'; g.font = `900 ${h * 0.42}px ${F.en}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(b.t, x + h * 0.32, h * 0.52); x += h * 0.72;
     }
     if (o.arrow === 'left') { g.fillStyle = o.fg || '#fff'; g.font = `900 ${h * 0.6}px ${F.en}`; g.textAlign = 'left'; g.textBaseline = 'middle'; g.fillText('←', x, h * 0.5); x += h * 0.72; }
@@ -92,10 +105,10 @@ export function makeTextures(ctx) {
   const fareMap = T.draw(1024, 512, (g, w, h) => {
     g.fillStyle = '#f4f2ec'; g.fillRect(0, 0, w, h);
     g.fillStyle = '#2d3038'; g.fillRect(0, 0, w, 56); g.fillStyle = '#fff'; g.font = `700 30px ${F.sans}`; g.textAlign = 'left'; g.textBaseline = 'middle'; g.fillText('きっぷうりば  運賃表  Fares (yen)', 24, 29);
-    const lines = [['#2f7fc0', 150, [['白鷺台', 990], ['浜音', 560], ['須賀浦', 400], ['桜都', 0], ['京桜', 580], ['近江野', 1170]]], ['#e9853a', 260, [['天満橋', 170], ['港町', 200], ['桜都', 0], ['森ノ宮', 200], ['京橋', 170]]], ['#ef9fbe', 370, [['桜ヶ丘', 310], ['花見台', 260], ['桜都', 0], ['春日野', 360]]], ['#3fa36b', 450, [['夢咲', 240], ['桜都', 0], ['北浜', 170]]]];
+    const lines = [['#0072bc', 150, [['姫路', 1520], ['三ノ宮', 410], ['尼崎', 190], ['塚本', 170], ['大阪', 0], ['新大阪', 170], ['高槻', 400], ['京都', 580]]], ['#f15a22', 260, [['西九条', 170], ['福島', 140], ['大阪', 0], ['天満', 140], ['京橋', 170], ['天王寺', 200]]], ['#ef8fb4', 370, [['桜ヶ丘', 310], ['花見台', 260], ['大阪', 0], ['春日野', 360]]], ['#1f6fbd', 450, [['桜島', 190], ['ユニバーサルシティ', 190], ['大阪', 0]]]];
     for (const [c, y, st] of lines) {
       g.strokeStyle = c; g.lineWidth = 14; g.beginPath(); g.moveTo(60, y); g.lineTo(w - 60, y); g.stroke();
-      st.forEach(([n, f], i) => { const x = 80 + i * (w - 160) / (st.length - 1); g.fillStyle = '#fff'; g.strokeStyle = n === '桜都' ? '#d9463b' : '#2d3038'; g.lineWidth = 5; g.beginPath(); g.arc(x, y, 13, 0, 6.3); g.fill(); g.stroke(); g.fillStyle = '#2d3038'; g.font = `700 22px ${F.sans}`; g.textAlign = 'center'; g.fillText(n, x, y - 32); if (f) { g.fillStyle = '#d9463b'; g.font = `700 20px ${F.en}`; g.fillText(String(f), x, y + 32); } });
+      st.forEach(([n, f], i) => { const x = 80 + i * (w - 160) / (st.length - 1); g.fillStyle = '#fff'; g.strokeStyle = n === '大阪' ? '#d9463b' : '#2d3038'; g.lineWidth = 5; g.beginPath(); g.arc(x, y, 13, 0, 6.3); g.fill(); g.stroke(); g.fillStyle = '#2d3038'; g.font = `700 22px ${F.sans}`; g.textAlign = 'center'; g.fillText(n, x, y - 32); if (f) { g.fillStyle = '#d9463b'; g.font = `700 20px ${F.en}`; g.fillText(String(f), x, y + 32); } });
     }
   }, { key: 'term.fare' });
   // ticket machine screen (touch panel)
@@ -104,7 +117,7 @@ export function makeTextures(ctx) {
     const c = ['#f2a33a', '#5fb4e6', '#7bc47f', '#e86e6e']; for (let i = 0; i < 4; i++) { g.fillStyle = c[i]; T.roundRect(g, 10 + (i % 2) * 58, 30 + Math.floor(i / 2) * 46, 50, 38, 6); g.fill(); }
   }, { key: 'term.tvm' });
   // advertising posters (fictional products / places)
-  const posters = ['春の京桜 花めぐり', '夢咲 海辺の水族館', '新幹線で 東都まで 2時間半', 'さくらサイダー 新発売', '桜都 百貨店 春の大市'].map((t, i) => T.draw(256, 384, (g, w, h) => {
+  const posters = ['京都 春の特別拝観', 'JRゆめ咲線で ユニバーサルシティへ', '新幹線で 東京まで 2時間半', 'ICOCA で ピッと', 'さくらサイダー 新発売'].map((t, i) => T.draw(256, 384, (g, w, h) => {
     const cols = [['#f7d3de', '#d9718f'], ['#bfe3ef', '#2f7fc0'], ['#e8eef7', '#0a5fb0'], ['#e9f5d8', '#3fa36b'], ['#fbe8c8', '#e9853a']][i];
     const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, cols[0]); gr.addColorStop(1, '#ffffff'); g.fillStyle = gr; g.fillRect(0, 0, w, h);
     g.fillStyle = cols[1]; g.beginPath(); g.arc(w * 0.5, h * 0.42, 70, 0, 6.3); g.fill();

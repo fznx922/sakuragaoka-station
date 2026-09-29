@@ -60,7 +60,7 @@ export function buildRoof(ctx, H) {
     K.box(L + 0.1, DEPTH + 1.0, 1.6, M.steel, mid.toArray(), [0, 0, Math.atan2(b.y - a.y, b.x - a.x)]);
   }
   // big tree-like support columns at the open east / west ends (two per end)
-  for (const u of [ROOF.u0, ROOF.u1]) for (const v of [-18, 8]) {
+  for (const u of [ROOF.u0, ROOF.u1]) for (const v of [-15.2, 2.4]) {   // on the island platforms' centre lines, clear of the tracks
     const y1 = roofY(u, v);
     K.cyl(0.9, 1.2, y1 - 5.3, M.steel, [u, 5.3 + (y1 - 5.3) / 2, v], null, 16);
     for (const s of [-1, 1]) K.box(0.5, 0.5, 12, M.steel, [u, y1 - 3, v + s * 4.5], [s * 0.6, 0, 0]);

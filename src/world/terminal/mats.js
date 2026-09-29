@@ -1,4 +1,4 @@
-// Shared materials of 桜都駅 (cached by ctx.mat, so identical calls share one material and batch together).
+// Shared materials of 大阪駅 (cached by ctx.mat, so identical calls share one material and batch together).
 export function makeMaterials(ctx, tx) {
   const { mat } = ctx;
   return {
