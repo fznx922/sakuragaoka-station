@@ -71,7 +71,7 @@ function snapshot() {
 }
 const warnings = [];
 let failed = false;
-const BUDGET = { environment: 350e3, street: 250e3, poles: 250e3, railway: 400e3, station: 400e3, plaza: 200e3, shopsA: 450e3, shopsB: 450e3, houses: 700e3, sakura: 700e3, trains: 350e3, crossing: 100e3, props: 300e3, vehicles: 250e3, characters: 200e3, petals: 250e3, inari: 2.5e6 /* separate area: the town is hidden while you are there */ };
+const BUDGET = { environment: 350e3, street: 250e3, poles: 250e3, railway: 400e3, station: 400e3, plaza: 200e3, shopsA: 450e3, shopsB: 450e3, houses: 700e3, sakura: 700e3, trains: 350e3, crossing: 100e3, props: 300e3, vehicles: 250e3, characters: 200e3, petals: 250e3, inari: 2.5e6, terminal: 2.5e6 /* separate areas: the town is hidden while you are there */ };
 
 for (const name of names) {
   const before = snapshot();

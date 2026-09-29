@@ -8,6 +8,7 @@
 // ============================================================================
 
 import * as INARI_PLAN from './inari/plan.js';
+import * as TERMINAL_PLAN from './terminal/plan.js';
 
 export const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 export const lerp = (a, b, t) => a + (b - a) * t;
@@ -40,8 +41,25 @@ export const INARI = {
   /** true for world x inside the Inari region (everything east of x = origin - 1500) */
   contains: (x) => INARI_PLAN.isInari(x),
 };
+// ---------------------------------------------------------------- 桜都駅 (Ōto) — a big JR-style terminal far west
+// Built by the terminal module (src/world/terminal/plan.js). Reached by boarding the train at platform 1, or key 7.
+export const TERMINAL = {
+  origin: TERMINAL_PLAN.ORIGIN,
+  play: { x0: TERMINAL_PLAN.ORIGIN.x + TERMINAL_PLAN.BOUNDS.u0, x1: TERMINAL_PLAN.ORIGIN.x + TERMINAL_PLAN.BOUNDS.u1, z0: TERMINAL_PLAN.ORIGIN.z + TERMINAL_PLAN.BOUNDS.v0, z1: TERMINAL_PLAN.ORIGIN.z + TERMINAL_PLAN.BOUNDS.v1 },
+  arrive: { x: TERMINAL_PLAN.ORIGIN.x + TERMINAL_PLAN.SPOTS.arrive.u, z: TERMINAL_PLAN.ORIGIN.z + TERMINAL_PLAN.SPOTS.arrive.v, yaw: TERMINAL_PLAN.SPOTS.arrive.yaw, pitch: TERMINAL_PLAN.SPOTS.arrive.pitch, y: TERMINAL_PLAN.Y.plat },
+  contains: (x) => TERMINAL_PLAN.isTerminal(x),
+};
+
+// ---------------------------------------------------------------- separate areas ("realms")
+// Each area lives in its own part of world space; only the area the camera is in is drawn (main.js).
+export const REGIONS = [
+  { id: 'inari', ...INARI, groundAt: INARI_PLAN.groundAt },
+  { id: 'terminal', ...TERMINAL, groundAt: TERMINAL_PLAN.groundAt },
+];
+/** The separate area containing world x, or null for the town. */
+export const regionAt = (x) => (x > 2500 || x < -2500 ? REGIONS.find(r => r.contains(x)) || null : null);
 /** Player bounds for the region containing (x, z). */
-export const regionBounds = (x) => (INARI.contains(x) ? INARI.play : WORLD.play);
+export const regionBounds = (x) => regionAt(x)?.play || WORLD.play;
 
 // ---------------------------------------------------------------- railway
 export const RAIL = {
@@ -235,7 +253,7 @@ export const FAR_TOWN = [
 // ---------------------------------------------------------------- terrain height
 /** Ground height (m) at (x,z). Everyone uses this to sit things on the ground. */
 export function heightAt(x, z) {
-  if (x > INARI.origin.x - 1500) return INARI_PLAN.groundAt(x, z);
+  if (x > 2500 || x < -2500) { const r = regionAt(x); if (r) return r.groundAt(x, z); }
   // south town gently rises toward the south (street slopes down to the station)
   let h;
   if (z <= 0) h = 0; else if (z < 10) h = 0.028 * z * z / 20; else h = 0.028 * (z - 5);
@@ -330,6 +348,7 @@ SPOTS.shrineSakura = lotToWorld(lotById('E6'), -2.5, -6.5);
 // Named areas for the HUD location toast (first match wins).
 export const AREAS = [
   ...INARI_PLAN.AREAS.map(a => ({ name: a.name, x0: INARI.origin.x + a.u0, x1: INARI.origin.x + a.u1, z0: INARI.origin.z + a.v0, z1: INARI.origin.z + a.v1 })),
+  ...TERMINAL_PLAN.AREAS.map(a => ({ name: a.name, x0: TERMINAL.origin.x + a.u0, x1: TERMINAL.origin.x + a.u1, z0: TERMINAL.origin.z + a.v0, z1: TERMINAL.origin.z + a.v1, y0: a.y0, y1: a.y1 })),
   { name: '桜ヶ丘駅 1番線ホーム', x0: -7, x1: 46, z0: -40, z1: -35.5 },
   { name: '桜ヶ丘駅 2番線ホーム', x0: -7, x1: 46, z0: -51, z1: -46 },
   { name: '桜ヶ丘駅', x0: -4, x1: 12, z0: -35.5, z1: -25 },

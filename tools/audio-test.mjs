@@ -44,11 +44,12 @@ server = http.createServer((req, res) => {
 await new Promise((r) => server.listen(0, '127.0.0.1', r));
 const port = server.address().port;
 
-const EDGE = ['C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe', 'C:/Program Files/Microsoft/Edge/Application/msedge.exe', 'C:/Program Files/Google/Chrome/Application/chrome.exe'].find((p) => fs.existsSync(p));
+const EDGE = [process.env.CHROME_PATH, 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe', 'C:/Program Files/Microsoft/Edge/Application/msedge.exe', 'C:/Program Files/Google/Chrome/Application/chrome.exe',
+  '/opt/pw-browsers/chromium', '/usr/bin/chromium', '/usr/bin/chromium-browser', '/usr/bin/google-chrome'].find((p) => p && fs.existsSync(p));
 const gpu = LIVE ? ['--use-angle=d3d11', '--enable-gpu', '--ignore-gpu-blocklist', '--enable-webgl', '--disable-gpu-sandbox'] : [];
 browser = await puppeteer.launch({
   executablePath: EDGE, headless: true,
-  args: [...gpu, '--no-first-run', '--disable-extensions', '--autoplay-policy=no-user-gesture-required', '--mute-audio', '--window-size=1280,720',
+  args: [...gpu, ...(process.platform === 'win32' ? [] : ['--no-sandbox']), '--no-first-run', '--disable-extensions', '--autoplay-policy=no-user-gesture-required', '--mute-audio', '--window-size=1280,720',
     '--disable-background-timer-throttling', '--disable-renderer-backgrounding', '--disable-backgrounding-occluded-windows'],
   defaultViewport: { width: 1280, height: 720, deviceScaleFactor: 1 },
   protocolTimeout: HARD,

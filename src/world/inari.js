@@ -54,19 +54,8 @@ export async function build(ctx) {
   const stats = step('batch', () => batchStatic(top, { mat: ctx.mat, farR: 1e9 }));
   ctx.services.inari = { origin: P.ORIGIN, torii: tunnels?.count || 0, trees: forest.counts, stats, plan: P };
 
-  // ---------------------------------------------------------------- realm switching (visibility)
-  let inside = null, wires = null;
-  const setRealm = (v) => {
-    inside = v;
-    top.visible = v;
-    ctx.staticRoot.visible = !v; ctx.dynamicRoot.visible = !v;
-    if (!wires) wires = ctx.scene.children.find(o => o.name === 'wires') || null;
-    if (wires) wires.visible = !v;
-  };
-  ctx.onUpdate(() => {
-    const v = L.INARI.contains(ctx.camera.position.x);
-    if (v !== inside) setRealm(v);
-  });
+  // realm switching: main.js shows this root only while the camera is in the area
+  ctx.realm?.register('inari', top);
 
   // ---------------------------------------------------------------- portals
   const e6 = L.lotById('E6');

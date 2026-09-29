@@ -14,9 +14,15 @@
 // Sound names
 //   loops:     'wind', 'birds', 'town' (ambient; auto-started by start()),
 //              'crossingBell' (カンカン alternating bell), 'trainRun' (params: speed m/s, 0..25),
-//              'cafeMusic' (soft music box near the café)
+//              'cafeMusic' (soft music box near the café),
+//              'crowd' (station concourse murmur + footsteps; ambient, started at volume 0),
+//              'hsRun' (Shinkansen running sound, params: speed m/s 0..90)
 //   one-shots: 'trainBrake', 'doorChime', 'doorOpen', 'doorClose', 'departMelody', 'announce' (text),
-//              'bicycleBell', 'catMeow', 'sparrow', 'vendingDrop'
+//              'bicycleBell', 'catMeow', 'sparrow', 'vendingDrop',
+//              'speak' (text, PA voice without the chime), 'icPass' (ピッ), 'icTouch' (ピピッ), 'icLow' (ピピピッ),
+//              'icError' (ピンポーン + ピー), 'approachA|B|C' (接近メロディ), 'departA|B|C' (発車メロディ),
+//              'shinChime' (新幹線 arrival chime), 'shinDepart' (新幹線 departure melody), 'shinDoor' (platform-gate chime)
+//   audio.setAmbience(name, volume) — level of an ambient loop ('wind', 'birds', 'town', 'crowd'); areas mix them
 //   (there are deliberately no footstep sounds; play('footstep') is a silent no-op)
 //
 // Extras (optional, backwards compatible)
@@ -335,6 +341,18 @@ function vendingDrop(sr, r) {              // short motor whirr, then ガコン 
   fadeEdges(x, sr, 0.002, 0.08); return norm(x, 0.9);
 }
 
+/** IC card gate beeps: n short square-ish tones at ~2.6 kHz (ピッ / ピピッ / ピピピッ), or one long ピー. */
+function icBeep(sr, n, long = false) {
+  const on = long ? 0.9 : 0.075, off = 0.045, f = 2600, x = arr(sr, (on + off) * n + 0.1);
+  for (let k = 0; k < n; k++) {
+    const t0 = k * (on + off), n0 = Math.round(t0 * sr), len = Math.round(on * sr), a = Math.round(0.003 * sr);
+    for (let i = 0; i < len; i++) {
+      const env = Math.min(1, i / a, (len - i) / a), ph = (i / sr) * f;
+      x[n0 + i] += env * (sinT(ph) + 0.28 * sinT(3 * ph) + 0.11 * sinT(5 * ph));
+    }
+  }
+  return norm(x, 0.8);
+}
 function synthKey(key, sr) {
   const r = prng(hashStr(key)); let m;
   if ((m = /^n:(\w+):(\d+)$/.exec(key))) return synthNote(sr, r, m[1], +m[2]);
@@ -356,6 +374,10 @@ function synthKey(key, sr) {
     case 'airRel': return airRelease(sr, r);
     case 'bike': return bikeBell(sr, r);
     case 'vending': return vendingDrop(sr, r);
+    case 'ic1': return icBeep(sr, 1);
+    case 'ic2': return icBeep(sr, 2);
+    case 'ic3': return icBeep(sr, 3);
+    case 'icLong': return icBeep(sr, 1, true);
     default: throw new Error('audio: unknown buffer ' + key);
   }
 }
@@ -373,6 +395,33 @@ function departNotes() {
   return out;
 }
 const DEPART = departNotes();
+/** Generic tune builder: eighth-note grid at bpm; mel [[eighth, midi]], chords [[eighth, [midis], bass]]. */
+function tune(bpm, mel, chords, { lead = 'cel', sparkle = null, lead2 = 'box', chordVel = 0.2 } = {}) {
+  const E = 60 / bpm / 2, out = [];
+  for (const [e, m] of mel) { const acc = e % 4 === 0 ? 1 : 0.84; out.push([e * E, lead, m, 0.85 * acc]); if (lead2) out.push([e * E, lead2, m + 12, 0.15 * acc]); }
+  if (sparkle) for (const [e, m] of sparkle) out.push([e * E, 'box', m, 0.26]);
+  for (const [e, ch, b] of chords) { for (const m of ch) out.push([e * E + 0.004, 'ep', m, chordVel]); if (b) out.push([e * E, 'bass', b, 0.34]); }
+  return out;
+}
+// 桜都駅 — original station melodies (接近 = approach ~4 s, 発車 = departure ~7 s), one set per island platform
+const APPROACH = {
+  A: tune(132, [[0, 74], [1, 78], [2, 81], [3, 86], [4, 85], [6, 81], [7, 78], [8, 79], [9, 81], [10, 83], [11, 85], [12, 86]], [[0, [62, 66, 69], 50], [4, [61, 64, 69], 45], [8, [59, 62, 67], 43], [12, [62, 66, 69], 50]], { sparkle: [[14, 98]] }),
+  B: tune(120, [[0, 72], [1, 77], [2, 81], [4, 79], [5, 77], [6, 74], [8, 76], [9, 79], [10, 84], [12, 81]], [[0, [65, 69, 72], 53], [4, [62, 65, 70], 46], [8, [64, 67, 72], 48], [12, [65, 69, 72], 53]], { lead: 'vib', sparkle: [[13, 93]] }),
+  C: tune(140, [[0, 79], [1, 83], [2, 86], [3, 83], [4, 88], [6, 86], [7, 83], [8, 81], [9, 83], [10, 84], [11, 86], [12, 91]], [[0, [67, 71, 74], 55], [4, [64, 67, 72], 48], [8, [62, 66, 69], 50], [12, [67, 71, 74], 43]]),
+};
+const DEPARTS = {
+  A: tune(136, [[0, 75], [1, 79], [2, 82], [3, 87], [4, 86], [5, 84], [6, 82], [8, 84], [9, 82], [10, 79], [11, 77], [12, 79], [14, 75],
+    [16, 77], [17, 80], [18, 84], [19, 87], [20, 86], [22, 84], [23, 82], [24, 80], [25, 82], [26, 84], [27, 86], [28, 87]],
+  [[0, [63, 67, 70], 51], [4, [62, 65, 70], 46], [8, [60, 63, 67], 48], [12, [58, 62, 65], 46], [16, [56, 60, 63], 44], [20, [58, 62, 65], 46], [24, [60, 63, 68], 44], [28, [63, 67, 70], 51]], { sparkle: [[30, 94], [31, 99]] }),
+  B: tune(128, [[0, 76], [2, 81], [3, 83], [4, 85], [6, 83], [7, 81], [8, 80], [9, 81], [10, 83], [12, 76], [16, 78], [18, 83], [19, 85], [20, 86], [22, 85], [23, 83], [24, 81], [26, 80], [28, 81]],
+    [[0, [69, 73, 76], 57], [4, [68, 71, 76], 52], [8, [66, 69, 73], 54], [12, [64, 68, 71], 52], [16, [62, 66, 69], 50], [20, [64, 68, 71], 52], [24, [61, 64, 69], 45], [28, [69, 73, 76], 57]], { lead: 'vib', sparkle: [[30, 93]] }),
+  C: tune(144, [[0, 72], [1, 76], [2, 79], [3, 84], [4, 83], [5, 79], [6, 76], [7, 79], [8, 81], [10, 77], [11, 81], [12, 84], [14, 83], [16, 84], [17, 86], [18, 88], [19, 91], [20, 89], [21, 86], [22, 84], [23, 86], [24, 83], [26, 79], [27, 83], [28, 84]],
+    [[0, [64, 67, 72], 48], [4, [62, 67, 71], 47], [8, [64, 69, 72], 45], [12, [65, 69, 72], 41], [16, [64, 67, 72], 48], [20, [65, 69, 74], 50], [24, [62, 67, 71], 43], [28, [64, 67, 72], 48]], { sparkle: [[30, 96]] }),
+};
+const SHIN_CHIME = [[0, 'vib', 79, 0.9], [0.21, 'vib', 84, 0.9], [0.42, 'vib', 88, 0.92], [0.63, 'vib', 91, 1], [0.63, 'box', 103, 0.2], [0.63, 'ep', 72, 0.2], [0.63, 'ep', 76, 0.2]];
+const SHIN_DEPART = tune(150, [[0, 81], [1, 85], [2, 88], [3, 93], [4, 92], [6, 88], [7, 85], [8, 86], [9, 88], [10, 90], [12, 93]], [[0, [69, 73, 76], 57], [4, [66, 69, 73], 54], [8, [62, 66, 69], 50], [12, [64, 68, 71], 52]], { lead: 'box', lead2: 'cel', sparkle: [[14, 105]] });
+const SHIN_DOOR = [[0, 'vib', 88, 0.7], [0.18, 'vib', 84, 0.7], [0.36, 'vib', 88, 0.7], [0.54, 'vib', 84, 0.7]];
+const IC_ERROR = [[0, 'vib', 88, 0.9], [0.32, 'vib', 84, 0.95]];   // ピンポーン
 const CHIME_NOTES = [[0, 'vib', 72, 0.8], [0.34, 'vib', 76, 0.8], [0.68, 'vib', 79, 0.82], [1.02, 'vib', 84, 0.9]];   // ピンポンパンポーン
 const DOOR_NOTES = [[0, 'vib', 83, 0.85], [0.4, 'vib', 79, 0.9]];                                                   // ピン・ポーン
 /** café music box waltz「午後の窓辺」— original, G major, 3/4, 92 bpm, 16 bars (~31 s loop). events {b (beats), inst, midi, vel} */
@@ -408,6 +457,7 @@ export function createAudio(options = {}) {
   let masterVol = clamp(Number(O.master) || 0, 0, 2), muted = !!O.muted, srcLive = 0, hrtfLive = 0, suspendTimer = null, jaVoice = null, meterBuf = null;
   const LS = { x: 0, y: 1.6, z: 0, fx: 0, fy: 0, fz: -1, ux: 0, uy: 1, uz: 0 }, LA_ = { x: NaN };
   const handles = new Set(), voices = [], disposals = [], cache = new Map(), warm = [], warned = new Set();
+  const ambH = {}, ambVol = { wind: 1, birds: 1, town: 1, crowd: 0 };   // ambient beds (areas mix them via setAmbience)
   const CAP = { sfx: 16, bird: 5, town: 3 };
   const HRTF_VOICES = 8;                                   // one-shots using HRTF at once (the rest: equal-power)
   const SILENT = new Set(['footstep', 'footsteps', 'step']); // removed on purpose: accepted and ignored
@@ -546,6 +596,20 @@ export function createAudio(options = {}) {
     catMeow: { ref: 2, range: 45, gain: 0.25, wet: 'lo', buf: ['meow0', 'meow1', 'meow2'], jitter: 0.06 },
     sparrow: { ref: 3, range: 60, gain: 0.45, wet: 'lo', buf: ['sp0', 'sp1', 'sp2', 'sp3', 'sp4', 'sp5'], jitter: 0.05 },
     vendingDrop: { ref: 2, range: 50, gain: 0.7, wet: 'lo', buf: ['vending'], jitter: 0.03 },
+    speak: { ref: 8, range: 220, gain: 0.19, wet: 'hi', pa: true, notes: () => [], speech: 0.15 },
+    icPass: { ref: 1.5, range: 30, gain: 0.32, wet: 'lo', buf: ['ic1'] },
+    icTouch: { ref: 1.5, range: 30, gain: 0.32, wet: 'lo', buf: ['ic2'] },
+    icLow: { ref: 1.5, range: 30, gain: 0.32, wet: 'lo', buf: ['ic3'] },
+    icError: { ref: 2, range: 35, gain: 0.3, wet: 'lo', notes: () => IC_ERROR, buf: ['icLong'] },
+    approachA: { ref: 8, range: 200, gain: 0.13, wet: 'hi', pa: true, notes: () => APPROACH.A },
+    approachB: { ref: 8, range: 200, gain: 0.13, wet: 'hi', pa: true, notes: () => APPROACH.B },
+    approachC: { ref: 8, range: 200, gain: 0.13, wet: 'hi', pa: true, notes: () => APPROACH.C },
+    departA: { ref: 8, range: 220, gain: 0.14, wet: 'hi', pa: true, notes: () => DEPARTS.A },
+    departB: { ref: 8, range: 220, gain: 0.14, wet: 'hi', pa: true, notes: () => DEPARTS.B },
+    departC: { ref: 8, range: 220, gain: 0.14, wet: 'hi', pa: true, notes: () => DEPARTS.C },
+    shinChime: { ref: 8, range: 260, gain: 0.15, wet: 'hi', pa: true, notes: () => SHIN_CHIME },
+    shinDepart: { ref: 8, range: 260, gain: 0.14, wet: 'hi', pa: true, notes: () => SHIN_DEPART },
+    shinDoor: { ref: 4, range: 60, gain: 0.2, wet: 'lo', notes: () => SHIN_DOOR },
   };
   function play(name, o) {
     try {
@@ -563,10 +627,10 @@ export function createAudio(options = {}) {
       const fade = pos ? farFade(dist, def.range) : 1;
       if (def.run) return def.run({ pos, dist, vol: vol * fade, t0 });
       let hold = 0;
-      if (name === 'announce') {   // the platform melody ducks under an announcement on the same platform, then comes back
+      if (name === 'announce' || name === 'speak') {   // the platform melody ducks under an announcement on the same platform, then comes back
         hold = def.speech + (o.text ? 0.6 + 0.14 * String(o.text).length : 0.9);
         for (const w of voices) {
-          if (w.name !== 'departMelody' || w.dying || (pos && w.pos && Math.hypot(w.pos.x - pos.x, w.pos.z - pos.z) > 45)) continue;
+          if (!/^(departMelody|depart[ABC]|shinDepart)$/.test(w.name) || w.dying || (pos && w.pos && Math.hypot(w.pos.x - pos.x, w.pos.z - pos.z) > 45)) continue;
           glide(w.out.gain, w.base * 0.3, 0.2, now);
           try { w.out.gain.setTargetAtTime(w.base, now + hold, 0.5); } catch (e) { /* */ }
         }
@@ -574,7 +638,7 @@ export function createAudio(options = {}) {
       const v = voice('sfx', { pos, dist, gain: vol * def.gain * fade, ref: def.ref, roll: def.roll || 1, wet: pos && def.wet ? (def.wet === 'hi' ? N.wetHi : N.wetLo) : null, pa: def.pa, pan: Number(o.pan) || 0, hq: true });
       if (!v) return null;
       v.name = name; v.base = vol * def.gain * fade; v.pos = pos ? { x: pos.x, y: pos.y, z: pos.z } : null;
-      if (def.buf) vSrc(v, R.pick(def.buf), t0, 1, 1 + (R() * 2 - 1) * (def.jitter || 0));
+      if (def.buf) vSrc(v, R.pick(def.buf), t0 + (def.notes ? 0.72 : 0), def.notes ? 0.6 : 1, 1 + (R() * 2 - 1) * (def.jitter || 0));
       if (def.notes) for (const [t, inst, midi, vel] of def.notes()) vSrc(v, `n:${inst}:${midi}`, t0 + t, vel, 1);
       if (def.speech && o.text) speakLater(String(o.text), pos, vol, def.speech + (t0 - now));
       return { stop: () => { try { killVoice(v); } catch (e) { /* */ } } };
@@ -660,6 +724,8 @@ export function createAudio(options = {}) {
     crossingBell: { ref: 6, roll: 1, range: 300, wet: 'hi', build: buildBell },
     trainRun: { ref: 10, roll: 1, range: 600, wet: 'lo', build: buildTrain },
     cafeMusic: { ref: 3, roll: 1.1, range: 45, wet: 'hi', build: buildCafe },
+    crowd: { amb: true, build: buildCrowd },
+    hsRun: { ref: 14, roll: 1, range: 1300, wet: 'lo', build: buildHs },
   };
   function bind(h) {
     const def = LOOPS[h.name], now = ac.currentTime;
@@ -925,6 +991,45 @@ export function createAudio(options = {}) {
     };
   }
 
+  // ---- station concourse: a murmuring crowd (band-limited noise, slow swells) + scattered footsteps
+  function buildCrowd(I, now) {
+    const out = I.in, wet = I.send(N.wetAmb, 0.9);
+    const mur = NOISE('pink', now), bp = BQ('bandpass', 520, 0.55), bp2 = BQ('peaking', 1400, 1.2, 4), g = G(0); mur.connect(bp); bp.connect(bp2); bp2.connect(g); g.connect(out); g.connect(wet);
+    const low = NOISE('brown', now), lp = BQ('lowpass', 220, 0.6), lg = G(0.04); low.connect(lp); lp.connect(lg); lg.connect(out);
+    const step = G(1); step.connect(out);
+    I.srcs.push(mur, low); I.nodes.push(bp, bp2, g, lp, lg, step);
+    const st = { next: now + 0.2 };
+    I.tick = (t, dt, _d, aud) => {
+      set(g.gain, 0.05 + 0.02 * Math.sin(t * 0.21) + 0.012 * Math.sin(t * 0.73 + 1), 0.4, t);
+      if (st.next < t - 0.5) st.next = t;
+      if (!aud) return;
+      while (st.next < t + LA) { playSrc(R() < 0.5 ? 'clkHi' : 'clkLo', step, st.next, 0.02 + 0.03 * R(), 2.4 + R() * 1.1, 60); st.next += 0.09 + R() * 0.28; }
+    };
+  }
+  // ---- Shinkansen: aerodynamic roar + rolling rumble + a thin motor whine, all following the speed
+  function buildHs(I, now) {
+    const out = I.in;
+    const chain = (src, f, g) => { src.connect(f); f.connect(g); g.connect(out); I.nodes.push(f, g); return g; };
+    const roll = NOISE('brown', now), rollLp = BQ('lowpass', 180, 0.6), rollG = chain(roll, rollLp, G(0));
+    const aero = NOISE('pink', now), aeroBp = BQ('bandpass', 900, 0.45), aeroG = chain(aero, aeroBp, G(0));
+    const hiss = NOISE('white', now), hissHp = BQ('highpass', 3000, 0.5), hissG = chain(hiss, hissHp, G(0));
+    const wh = OSC('sawtooth', 400), whLp = BQ('lowpass', 2600, 0.7), whG = chain(wh, whLp, G(0));
+    wh.start(now);
+    I.srcs.push(roll, aero, hiss, wh);
+    const st = { v: 0, dop: 1, dPrev: null };
+    I.setParam = (k, val) => { if (k === 'speed') st.v = clamp(Number(val) || 0, 0, 90); };
+    I.setParam('speed', I.h.params.speed);
+    I.tick = (t, dt, dist) => {
+      if (dt > 0 && st.dPrev !== null && Math.abs(dist - st.dPrev) < 6) { const vr = clamp((st.dPrev - dist) / dt, -80, 80); st.dop += (343 / (343 - vr) - st.dop) * Math.min(1, dt * 4); }
+      st.dPrev = dist;
+      const v = st.v, vn = v / 70, dop = clamp(st.dop, 0.8, 1.3);
+      set(rollG.gain, 0.28 * Math.min(1.2, vn + 0.05), 0.08, t); set(rollLp.frequency, (120 + 3 * v) * dop, 0.1, t);
+      set(aeroG.gain, 0.3 * Math.pow(vn, 1.8), 0.06, t); set(aeroBp.frequency, (500 + 12 * v) * dop, 0.08, t);
+      set(hissG.gain, 0.08 * Math.pow(vn, 2.2), 0.06, t);
+      set(wh.frequency, (180 + 36 * v) * dop, 0.08, t); set(whG.gain, v > 0.2 ? 0.02 * clamp01(1.2 - Math.abs(vn - 0.35)) : 0, 0.1, t);
+    };
+  }
+
   // ---- café: music-box waltz sequenced from cached note buffers, muffled by the window
   function buildCafe(I, now) {
     const g = G(0.3), lp = BQ('lowpass', 3600, 0.6), hp = BQ('highpass', 150, 0.6); g.connect(hp); hp.connect(lp); lp.connect(I.in); I.nodes.push(g, lp, hp);
@@ -947,10 +1052,10 @@ export function createAudio(options = {}) {
   // ------------------------------------------------------------ graph, start, update
   const PREWARM = (() => {
     const k = ['sp0', 'sp1', 'sp2', 'sp3', 'sp4', 'sp5', 'ugu0', 'ugu1', 'bike', 'crow0', 'crow1',
-      'meow0', 'meow1', 'meow2', 'vending', 'doorOpen', 'doorClose', 'airRel'];
+      'meow0', 'meow1', 'meow2', 'vending', 'doorOpen', 'doorClose', 'airRel', 'ic1', 'ic2', 'ic3', 'icLong'];
     const notes = new Set();
     for (const e of CAFE) notes.add(`n:${e.inst}:${e.midi}`);
-    for (const [, i, m] of [...CHIME_NOTES, ...DOOR_NOTES, ...DEPART]) notes.add(`n:${i}:${m}`);
+    for (const [, i, m] of [...CHIME_NOTES, ...DOOR_NOTES, ...DEPART, ...IC_ERROR, ...SHIN_CHIME, ...SHIN_DOOR, ...SHIN_DEPART, ...Object.values(APPROACH).flat(), ...Object.values(DEPARTS).flat()]) notes.add(`n:${i}:${m}`);
     return k.concat([...notes]);
   })();
   function buildGraph() {
@@ -998,7 +1103,7 @@ export function createAudio(options = {}) {
       buildGraph();
       applyListener(true);
       warm.push(...PREWARM);
-      if (O.ambience) for (const n of ['wind', 'birds', 'town']) loop(n, { volume: 1 });
+      if (O.ambience) for (const n of ['wind', 'birds', 'town', 'crowd']) ambH[n] = loop(n, { volume: ambVol[n] ?? 1 });
       for (const h of handles) if (!h.impl && !h.stopped) { try { bind(h); } catch (e) { warnOnce('bind:' + h.name, 'loop failed', h.name, e); } }
       if (!offline) { if (ac.state !== 'running' && !muted) ac.resume().catch(() => {}); hookPage(); if (muted) applyMute(); }
       initSpeech();
@@ -1083,6 +1188,8 @@ export function createAudio(options = {}) {
     get master() { return masterVol; },
     setMaster(v) { try { masterVol = clamp(Number(v) || 0, 0, 2); if (ac && N) glide(N.master.gain, masterVol, 0.05); } catch (e) { /* */ } },
     start, update, loop, play,
+    /** level of an ambient bed ('wind' | 'birds' | 'town' | 'crowd'), e.g. per area; safe before start() */
+    setAmbience(name, v, rampS = 1.5) { try { if (!hasOwn(ambVol, name)) return; ambVol[name] = clamp(Number(v) || 0, 0, 2); const h = ambH[name]; if (h) h.setVolume(ambVol[name], rampS); } catch (e) { /* */ } },
     names: { loops: Object.keys(LOOPS), oneShots: Object.keys(SFX) },
     meter() {
       try {
