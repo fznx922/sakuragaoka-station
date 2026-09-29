@@ -42,6 +42,14 @@ A walkable, first-person **anime cel-shaded Japanese suburban sakura station** b
 - **Synthesized audio** – wind, birds, crossing bell, train motors and rail joints, door chimes, departure / approach melodies, IC gate beeps, Shinkansen run-by, station crowd, and Japanese announcements through the browser's speech synthesis. It is all WebAudio, with no sound files (optional recordings can replace the station melodies).
 - **Performance** – automatic static batching (vertex-colour material merging + texture atlasing); ~4 M triangles at 60+ fps on a desktop GPU.
 
+## Play without a server
+
+Download [`play/Sakuragaoka.html`](play/Sakuragaoka.html) and double-click it. It's the whole game in one file (three.js
+included) and opens in any modern browser (Chrome, Edge, Firefox, Safari). There's nothing to install and no server to
+run. With an internet connection it uses the Japanese web fonts; offline it falls back to your system fonts.
+
+After changing the code, rebuild it with `npm run build` (bundles everything with esbuild into that one file).
+
 ## Run
 
 Serve the folder with any static file server, e.g. the bundled one:

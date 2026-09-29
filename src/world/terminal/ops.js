@@ -28,7 +28,7 @@ export function buildOps(ctx, H) {
   const paAt = (v, y) => { const p = H.player(); const u = p ? Math.max(-90, Math.min(90, p.u)) : 0; const w = P.toWorld(u, v); return { x: w.x, y: y + 4.2, z: w.z }; };
   const say = (text, pos) => au?.play('speak', { position: pos, text });
   // optional real recordings: audio/terminal/manifest.json maps sound names to files next to it
-  if (au?.useFile && typeof fetch === 'function' && typeof location !== 'undefined') {
+  if (au?.useFile && typeof fetch === 'function' && typeof location !== 'undefined' && location.protocol !== 'file:') {
     fetch('audio/terminal/manifest.json').then(r => (r.ok ? r.json() : null)).then(m => {
       if (!m || typeof m !== 'object') return;
       for (const [name, file] of Object.entries(m)) if (typeof file === 'string' && file && !name.startsWith('_')) au.useFile(name, 'audio/terminal/' + file);

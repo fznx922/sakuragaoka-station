@@ -8,9 +8,11 @@
   "scripts": {
     "start": "node tools/serve.mjs",
     "serve": "node tools/serve.mjs",
-    "check": "node tools/check.mjs environment street poles railway station plaza shopsA shopsB houses sakura trains crossing props vehicles characters petals inari terminal"
+    "check": "node tools/check.mjs environment street poles railway station plaza shopsA shopsB houses sakura trains crossing props vehicles characters petals inari terminal",
+    "build": "node tools/build-single.mjs"
   },
   "devDependencies": {
+    "esbuild": "^0.28.2",
     "puppeteer-core": "^23.11.1",
     "three": "0.170.0"
   }
