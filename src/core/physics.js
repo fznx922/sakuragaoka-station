@@ -53,7 +53,8 @@ export class Physics {
     if (b.isEmpty()) return null;
     return this.addAABB(b.min.x - pad, b.min.z - pad, b.max.x + pad, b.max.z + pad, b.min.y, b.max.y);
   }
-  /** Moving colliders: fn() returns an array of {cx,cz,w,d,rotY,y0,y1} each frame. */
+  /** Moving colliders: fn() returns an array of {cx,cz,w,d,rotY,y0,y1} each frame (with `top`: a walkable box whose
+   *  surface is at `top`, e.g. the floor of a moving train). */
   addDynamic(fn) { this.dynamic.push(fn); }
 
   _local(it, x, z) { const dx = x - it.cx, dz = z - it.cz; return [dx * it.c - dz * it.s, dx * it.s + dz * it.c]; }
@@ -65,7 +66,7 @@ export class Physics {
   }
   refreshDynamic() {
     this._dynItems.length = 0;
-    for (const fn of this.dynamic) { const arr = fn() || []; for (const b of arr) this._dynItems.push(this._obb('box', b.cx, b.cz, b.w, b.d, b.rotY || 0, { y0: b.y0 ?? -50, y1: b.y1 ?? 200 })); }
+    for (const fn of this.dynamic) { const arr = fn() || []; for (const b of arr) this._dynItems.push(b.top !== undefined ? this._obb('walk', b.cx, b.cz, b.w, b.d, b.rotY || 0, { top: b.top, y0: b.y0 ?? b.top - 1 }) : this._obb('box', b.cx, b.cz, b.w, b.d, b.rotY || 0, { y0: b.y0 ?? -50, y1: b.y1 ?? 200 })); }
   }
 
   /** Surface height under (x,z) for feet at feetY (highest walkable top not above feet+STEP). */

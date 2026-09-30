@@ -73,7 +73,7 @@ export function buildFurniture(ctx, H) {
   shop(2, 11, '駅弁 桜膳', 'Ekiben · Bento', '#b8453a', 'bento');
   shop(-12, -2, 'カフェ 梅田', 'Café Umeda', '#5a4032', 'cafe');
   for (const [u, v] of [[4, 6], [4, -6], [10, 6], [10, -6]]) place((k) => bench(k, 2.4), u, 0, v, (u === 4 ? 1 : -1) * Math.PI / 2, 2.4, 0.6, 1);
-  place(vending, -33.3, 0, 26, Math.PI / 2, 1.0, 0.75); place(vending, -33.3, 0, 24.9, Math.PI / 2, 1.0, 0.75);
+  // (vending machines: the town's detailed ones, placed by shops.js)
   place(bins, -33.4, 0, 22.4, Math.PI / 2, 2.0, 0.55, 1.1);
   // posters on the concourse walls
   tx.posters.forEach((pt, i) => { K.plane(1.2, 1.8, mat.toon('#ffffff', { map: pt, paint: 0.01 }), [-33.78, 1.9, -8 + i * 3.6], [0, Math.PI / 2, 0]); });
@@ -94,7 +94,6 @@ export function buildFurniture(ctx, H) {
     const y = P.Y.plat;
     for (const u of [-85, -40, 25, 70]) place((k) => { bench(k, 2.4); }, u, y, I.v - 0.35, Math.PI, 2.4, 0.6, 1);
     for (const u of [-85, -40, 25, 70]) place((k) => { bench(k, 2.4); }, u, y, I.v + 0.35, 0, 2.4, 0.6, 1);
-    place(vending, 38, y, I.v, Math.PI / 2, 1.0, 0.75);
     place(bins, -70, y, I.v, Math.PI / 2, 2.0, 0.55, 1.1);
     // emergency stop buttons on columns at the platform ends
     for (const u of [-95, 95]) { K.box(0.2, 1.6, 0.2, M.steel, [u, y + 0.8, I.v]); K.box(0.3, 0.3, 0.1, M.red, [u, y + 1.45, I.v + 0.12]); K.box(0.3, 0.3, 0.1, M.red, [u, y + 1.45, I.v - 0.12]); }
@@ -102,7 +101,6 @@ export function buildFurniture(ctx, H) {
   for (const S of P.S_PLATS) {
     const y = P.Y.platS, back = S.edge === S.v0 ? S.v1 - 0.8 : S.v0 + 0.8;
     for (const u of [-150, -90, 40, 100, 170]) place((k) => bench(k, 3.2), u, y, back, S.edge === S.v0 ? Math.PI : 0, 3.2, 0.6, 1);
-    place(vending, 130, y, back, S.edge === S.v0 ? Math.PI : 0, 1.0, 0.75);
   }
 
   // ---------------------------------------------------------------- ホームドア (tracks 3 & 4) and the Shinkansen platform fences

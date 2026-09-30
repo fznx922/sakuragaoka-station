@@ -427,10 +427,45 @@ const DEPARTS = {
   F: tune(150, [[0, 72], [1, 72], [2, 76], [3, 79], [4, 84], [5, 83], [6, 79], [7, 76], [8, 77], [9, 77], [10, 81], [11, 84], [12, 86], [14, 84], [16, 83], [17, 81], [18, 79], [19, 81], [20, 83], [21, 84], [22, 86], [24, 88], [26, 86], [27, 84], [28, 84]],
     [[0, [60, 64, 67], 48], [4, [64, 67, 72], 52], [8, [65, 69, 72], 53], [12, [62, 65, 69], 50], [16, [67, 71, 74], 55], [20, [64, 67, 72], 48], [24, [65, 69, 72], 53], [28, [60, 64, 67], 48]], { lead: 'box', lead2: 'cel', sparkle: [[30, 96], [31, 100]] }),
 };
+/** 山手線 — a departure melody per station (JR East style), generated from the station number: a 4-bar tune in a
+ *  major key, bars 1 and 3 sharing a motif, a cadence home, 118–154 bpm, a different lead instrument per station. */
+function eastJingle(n) {
+  let sd = n * 7919 + 13; const r = () => ((sd = (sd * 16807) % 2147483647) / 2147483647);
+  const root = [72, 74, 75, 77, 79, 76, 70, 73][n % 8];
+  const SC = [-5, -3, -1, 0, 2, 4, 5, 7, 9, 11, 12, 14, 16];   // major scale degrees around the root
+  const bpm = 118 + Math.floor(r() * 37);
+  const lead = ['cel', 'vib', 'box', 'ep'][n % 4], lead2 = lead === 'box' ? 'cel' : 'box';
+  const RH = [[0, 1, 2, 3, 4, 6], [0, 2, 3, 4, 6, 7], [0, 1, 2, 4, 5, 6], [0, 2, 4, 5, 6], [0, 1, 3, 4, 6], [0, 1, 2, 3, 4, 5, 6]];
+  const PROG = r() < 0.5 ? [[0, 4, 7], [5, 9, 12], [7, 11, 14], [0, 4, 7]] : [[0, 4, 7], [-3, 0, 4], [5, 9, 12], [7, 11, 14]];
+  const chordTone = (b, st) => { const pcs = PROG[b].map(x => ((x % 12) + 12) % 12); let best = st, bd = 99; for (let k = 0; k < SC.length; k++) if (pcs.includes(((SC[k] % 12) + 12) % 12) && Math.abs(k - st) < bd) { bd = Math.abs(k - st); best = k; } return best; };
+  const mel = [];
+  let deg = 5 + Math.floor(r() * 3), motif = null;
+  for (let b = 0; b < 4; b++) {
+    const rh = b === 2 && motif ? motif.rh : RH[Math.floor(r() * RH.length)];
+    const notes = [];
+    rh.forEach((e, i) => {
+      if (b === 2 && motif) deg = Math.max(0, Math.min(SC.length - 1, motif.degs[i] + (i === rh.length - 1 ? 1 : 0)));
+      else { const st = [-2, -1, -1, 1, 1, 2, 3, -3][Math.floor(r() * 8)]; deg = Math.max(1, Math.min(SC.length - 2, deg + st)); if (e % 4 === 0) deg = chordTone(b, deg); }
+      if (b === 3 && i === rh.length - 1) deg = 10;                  // end on the tonic an octave up
+      notes.push(deg); mel.push([b * 8 + e, root + SC[deg]]);
+    });
+    if (b === 0) motif = { rh, degs: notes };
+  }
+  const chords = PROG.map((c, b) => [b * 8, c.map(x => root - 12 + x), root - 24 + c[0]]);
+  chords.push([30, [root - 12, root - 8, root - 5], root - 24]);
+  return tune(bpm, mel, chords, { lead, lead2, sparkle: [[30, root + 24], [31, root + 19]], chordVel: 0.17 });
+}
+/** 駒込: the traditional「さくらさくら」(駒込 is known for its cherry blossoms + azaleas) */
+const SAKURA_SAKURA = tune(92, [[0, 81], [2, 81], [4, 83], [8, 81], [10, 81], [12, 83], [16, 81], [18, 83], [20, 84], [22, 83], [24, 81], [26, 83], [27, 81], [28, 77]],
+  [[0, [69, 72, 76], 45], [8, [69, 72, 76], 45], [16, [65, 69, 72], 41], [24, [64, 68, 71], 40]], { lead: 'cel', lead2: 'vib', sparkle: [[30, 93]] });
+const YAMANOTE = Array.from({ length: 30 }, (_, i) => (i === 21 ? SAKURA_SAKURA : eastJingle(i + 1)));
+/** JR East door chime (E231 / E233 / E235): ピンポーン ×3 */
+const EAST_DOOR = [0, 0.64, 1.28].flatMap(t => [[t, 'vib', 80, 0.8], [t + 0.3, 'vib', 76, 0.82]]);
 const SHIN_CHIME = [[0, 'vib', 79, 0.9], [0.21, 'vib', 84, 0.9], [0.42, 'vib', 88, 0.92], [0.63, 'vib', 91, 1], [0.63, 'box', 103, 0.2], [0.63, 'ep', 72, 0.2], [0.63, 'ep', 76, 0.2]];
 const SHIN_DEPART = tune(150, [[0, 81], [1, 85], [2, 88], [3, 93], [4, 92], [6, 88], [7, 85], [8, 86], [9, 88], [10, 90], [12, 93]], [[0, [69, 73, 76], 57], [4, [66, 69, 73], 54], [8, [62, 66, 69], 50], [12, [64, 68, 71], 52]], { lead: 'box', lead2: 'cel', sparkle: [[14, 105]] });
 const SHIN_DOOR = [[0, 'vib', 88, 0.7], [0.18, 'vib', 84, 0.7], [0.36, 'vib', 88, 0.7], [0.54, 'vib', 84, 0.7]];
 const IC_ERROR = [[0, 'vib', 88, 0.9], [0.32, 'vib', 84, 0.95]];   // ピンポーン
+const GUIDE_CHIME = [[0, 'vib', 88, 0.8], [0.55, 'vib', 85, 0.8]];     // 盲導鈴 ピーン・ポーン
 const CHIME_NOTES = [[0, 'vib', 72, 0.8], [0.34, 'vib', 76, 0.8], [0.68, 'vib', 79, 0.82], [1.02, 'vib', 84, 0.9]];   // ピンポンパンポーン
 const DOOR_NOTES = [[0, 'vib', 83, 0.85], [0.4, 'vib', 79, 0.9]];                                                   // ピン・ポーン
 /** café music box waltz「午後の窓辺」— original, G major, 3/4, 92 bpm, 16 bars (~31 s loop). events {b (beats), inst, midi, vel} */
@@ -625,9 +660,14 @@ export function createAudio(options = {}) {
     departD: { ref: 8, range: 220, gain: 0.14, wet: 'hi', pa: true, notes: () => DEPARTS.D },
     departE: { ref: 8, range: 220, gain: 0.14, wet: 'hi', pa: true, notes: () => DEPARTS.E },
     departF: { ref: 8, range: 220, gain: 0.14, wet: 'hi', pa: true, notes: () => DEPARTS.F },
+    /** 盲導鈴: the soft "ピーン・ポーン" guide chime at stairs and ticket gates (for visually impaired passengers) */
+    guideChime: { ref: 3, range: 40, gain: 0.16, wet: 'lo', notes: () => GUIDE_CHIME },
     /** electronic departure bell (発車ベル, the warbling "プルルル" of the Tōkaidō Shinkansen platforms), ~6 s */
     departBell: { ref: 8, range: 260, gain: 0.13, wet: 'hi', pa: true, run: bellVoice },
   };
+  // 山手線 JY01–JY30 departure melodies + the E235 door chime
+  for (let i = 0; i < 30; i++) SFX['jy' + String(i + 1).padStart(2, '0')] = { ref: 8, range: 220, gain: 0.14, wet: 'hi', pa: true, notes: () => YAMANOTE[i] };
+  SFX.eastDoor = { ref: 4, range: 60, gain: 0.22, wet: 'lo', notes: () => EAST_DOOR };
   // optional recordings that replace a sound (api.useFile): name -> AudioBuffer, and name -> url before start()
   const FILES = new Map(), FILE_URLS = new Map();
   function loadFile(name, url) {
@@ -642,7 +682,7 @@ export function createAudio(options = {}) {
     if (!v) return null;
     v.name = name; v.base = vol * (def.fileGain ?? 0.5) * fade; v.pos = pos ? { x: pos.x, y: pos.y, z: pos.z } : null;
     const s = ac.createBufferSource(); s.buffer = ab; s.connect(v.in); s.start(now + 0.01); v.srcs.push(s); v.end = now + ab.duration + 0.2;
-    if (def.speech && o.text) speakLater(String(o.text), pos, vol, def.speech);
+    if (def.speech && o.text) speakLater(String(o.text), pos, vol, def.speech, o.lang || 'ja');
     return { stop: () => { try { killVoice(v); } catch (e) { /* */ } } };
   }
   function bellVoice({ pos, dist, vol, t0 }) {
@@ -680,7 +720,7 @@ export function createAudio(options = {}) {
       if (name === 'announce' || name === 'speak') {   // the platform melody ducks under an announcement on the same platform, then comes back
         hold = def.speech + (o.text ? 0.6 + 0.14 * String(o.text).length : 0.9);
         for (const w of voices) {
-          if (!/^(departMelody|depart[A-F]|departBell|shinDepart)$/.test(w.name) || w.dying || (pos && w.pos && Math.hypot(w.pos.x - pos.x, w.pos.z - pos.z) > 45)) continue;
+          if (!/^(departMelody|depart[A-F]|departBell|shinDepart|jy\d\d)$/.test(w.name) || w.dying || (pos && w.pos && Math.hypot(w.pos.x - pos.x, w.pos.z - pos.z) > 45)) continue;
           glide(w.out.gain, w.base * 0.3, 0.2, now);
           try { w.out.gain.setTargetAtTime(w.base, now + hold, 0.5); } catch (e) { /* */ }
         }
@@ -690,7 +730,7 @@ export function createAudio(options = {}) {
       v.name = name; v.base = vol * def.gain * fade; v.pos = pos ? { x: pos.x, y: pos.y, z: pos.z } : null;
       if (def.buf) vSrc(v, R.pick(def.buf), t0 + (def.notes ? 0.72 : 0), def.notes ? 0.6 : 1, 1 + (R() * 2 - 1) * (def.jitter || 0));
       if (def.notes) for (const [t, inst, midi, vel] of def.notes()) vSrc(v, `n:${inst}:${midi}`, t0 + t, vel, 1);
-      if (def.speech && o.text) speakLater(String(o.text), pos, vol, def.speech + (t0 - now));
+      if (def.speech && o.text) speakLater(String(o.text), pos, vol, def.speech + (t0 - now), o.lang || 'ja');
       return { stop: () => { try { killVoice(v); } catch (e) { /* */ } } };
     } catch (e) { warnOnce('play:' + name, 'play failed', name, e); return null; }
   }
@@ -739,6 +779,14 @@ export function createAudio(options = {}) {
     for (const re of [/nanami/i, /haruka/i, /ayumi/i, /kyoko/i, /mizuki/i, /google/i, /female/i]) { const v = ja.find((x) => re.test(x.name || '')); if (v) return v; }
     return ja[0];
   }
+  /** an English voice for the bilingual train announcements (JR East's are a calm male voice) */
+  function pickVoiceEn() {
+    const ss = globalThis.speechSynthesis; if (!ss || !ss.getVoices) return null;
+    const en = (ss.getVoices() || []).filter((v) => /^en/i.test(v.lang || ''));
+    if (!en.length) return null;
+    for (const re of [/guy/i, /daniel/i, /google uk english male/i, /male/i, /alex/i, /david/i, /google us/i]) { const v = en.find((x) => re.test(x.name || '')); if (v) return v; }
+    return en[0];
+  }
   function initSpeech() {
     if (!O.speech || offline) return;
     try {
@@ -748,18 +796,22 @@ export function createAudio(options = {}) {
     } catch (e) { /* speech optional */ }
   }
   function cancelSpeech() { try { if (globalThis.speechSynthesis) globalThis.speechSynthesis.cancel(); } catch (e) { /* */ } }
-  function speakLater(text, pos, vol, delay) {
+  let enVoice = null;
+  function speakLater(text, pos, vol, delay, lang = 'ja') {
     if (!O.speech || offline || typeof setTimeout !== 'function') return;
     const p = pos ? { x: pos.x, y: pos.y, z: pos.z } : null;
     setTimeout(() => {
       try {
         const ss = globalThis.speechSynthesis, U = globalThis.SpeechSynthesisUtterance;
+        let queue = lang === 'en' || lang === 'ja+';   // an English line (or 'ja+') follows the previous one instead of cutting it off
         if (!ss || !U || muted || hidden() || !ac || ac.state !== 'running') return;
-        const v = jaVoice || (jaVoice = pickVoice()); if (!v) return;       // no Japanese voice -> silent
+        const v = lang === 'en' ? (enVoice || (enVoice = pickVoiceEn())) : (jaVoice || (jaVoice = pickVoice())); if (!v) return;   // no voice -> silent
         const d = p ? distTo(p) : 0, att = p ? 10 / (10 + Math.max(0, d - 10)) : 1;
         const g = clamp(vol * masterVol * att * 0.7, 0, 0.55); if (g < 0.04) return;
-        const u = new U(text); u.voice = v; u.lang = v.lang || 'ja-JP'; u.rate = 0.96; u.pitch = 1.08; u.volume = g;
-        if (ss.speaking || ss.pending) ss.cancel();
+        const u = new U(text); u.voice = v; u.lang = v.lang || (lang === 'en' ? 'en-US' : 'ja-JP'); u.rate = lang === 'en' ? 0.92 : 0.96; u.pitch = lang === 'en' ? 0.95 : 1.08; u.volume = g;
+        if (queue) { if (!ss.speaking && !ss.pending) queue = false; }
+        if (!queue && (ss.speaking || ss.pending)) ss.cancel();
+        queue = false;
         ss.speak(u);
       } catch (e) { /* fail silently */ }
     }, Math.max(0, delay * 1000));
@@ -1105,7 +1157,7 @@ export function createAudio(options = {}) {
       'meow0', 'meow1', 'meow2', 'vending', 'doorOpen', 'doorClose', 'airRel', 'ic1', 'ic2', 'ic3', 'icLong'];
     const notes = new Set();
     for (const e of CAFE) notes.add(`n:${e.inst}:${e.midi}`);
-    for (const [, i, m] of [...CHIME_NOTES, ...DOOR_NOTES, ...DEPART, ...IC_ERROR, ...SHIN_CHIME, ...SHIN_DOOR, ...SHIN_DEPART, ...Object.values(APPROACH).flat(), ...Object.values(DEPARTS).flat()]) notes.add(`n:${i}:${m}`);
+    for (const [, i, m] of [...CHIME_NOTES, ...DOOR_NOTES, ...DEPART, ...IC_ERROR, ...GUIDE_CHIME, ...EAST_DOOR, ...YAMANOTE.flat(), ...SHIN_CHIME, ...SHIN_DOOR, ...SHIN_DEPART, ...Object.values(APPROACH).flat(), ...Object.values(DEPARTS).flat()]) notes.add(`n:${i}:${m}`);
     return k.concat([...notes]);
   })();
   function buildGraph() {

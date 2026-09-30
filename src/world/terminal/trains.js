@@ -14,9 +14,9 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import * as P from './plan.js';
 
 // ================================================================== atlas (1024²) + accumulator
-const ATLAS = 1024;
-const WHITE = [4, 4, 12, 12];
-const R = {
+export const ATLAS = 1024;
+export const WHITE = [4, 4, 12, 12];
+export const R = {
   emuWin: (i) => [(i % 4) * 256 + 2, 18 + Math.floor(i / 4) * 128, (i % 4) * 256 + 254, 18 + Math.floor(i / 4) * 128 + 124],   // 8 variants
   doorWin: (i) => [i * 64 + 2, 276, i * 64 + 62, 396],                                                                 // 4 variants
   cabGlass: [258, 276, 510, 396],
@@ -28,11 +28,11 @@ const R = {
   shinDoorWin: [644, 404, 700, 524],
 };
 const _m = new THREE.Matrix4(), _q = new THREE.Quaternion(), _e = new THREE.Euler(), _v = new THREE.Vector3(), _s = new THREE.Vector3();
-const mat4 = (pos = [0, 0, 0], rot = null, scale = null) => _m.clone().compose(_v.set(pos[0], pos[1], pos[2]), _q.setFromEuler(_e.set(rot ? rot[0] : 0, rot ? rot[1] : 0, rot ? rot[2] : 0, 'YXZ')), _s.set(scale ? scale[0] : 1, scale ? scale[1] : 1, scale ? scale[2] : 1));
+export const mat4 = (pos = [0, 0, 0], rot = null, scale = null) => _m.clone().compose(_v.set(pos[0], pos[1], pos[2]), _q.setFromEuler(_e.set(rot ? rot[0] : 0, rot ? rot[1] : 0, rot ? rot[2] : 0, 'YXZ')), _s.set(scale ? scale[0] : 1, scale ? scale[1] : 1, scale ? scale[2] : 1));
 const _c = new THREE.Color();
 
 /** accumulates geometry (position, normal, colour, atlas uv) and merges it into one BufferGeometry */
-class Acc {
+export class Acc {
   constructor() { this.list = []; }
   add(geo, m = null, color = '#ffffff', rect = null) {
     const g = geo.index ? geo.toNonIndexed() : geo.clone();
@@ -53,11 +53,11 @@ class Acc {
   plane(w, h, pos, rot, rect, color = '#ffffff') { return this.add(G.plane, mat4(pos, rot, [w, h, 1]), color, rect); }
   build() { if (!this.list.length) return null; const g = mergeGeometries(this.list, false); g.computeBoundingSphere(); g.computeBoundingBox(); return g; }
 }
-const G = { box: new THREE.BoxGeometry(1, 1, 1), plane: new THREE.PlaneGeometry(1, 1) };
+export const G = { box: new THREE.BoxGeometry(1, 1, 1), plane: new THREE.PlaneGeometry(1, 1) };
 
 /** a closed profile loop [[z, y], ...] (counter-clockwise seen from +x) swept from x0 to x1; per-face colours from
  *  colorAt(y, z); smooth normals around the loop. Returns a non-indexed geometry. */
-function sweep(prof, x0, x1, colorAt) {
+export function sweep(prof, x0, x1, colorAt) {
   const n = prof.length, pos = [], nor = [], col = [];
   const segN = prof.map((p, i) => { const q = prof[(i + 1) % n]; const dz = q[0] - p[0], dy = q[1] - p[1], l = Math.hypot(dz, dy) || 1; return [dy / l, -dz / l]; }); // (nz, ny) outward
   const vN = prof.map((p, i) => { const a = segN[(i - 1 + n) % n], b = segN[i]; const dot = a[0] * b[0] + a[1] * b[1]; if (dot < 0.5) return null; const z = a[0] + b[0], y = a[1] + b[1], l = Math.hypot(z, y) || 1; return [z / l, y / l]; });
@@ -78,14 +78,14 @@ function sweep(prof, x0, x1, colorAt) {
   return g;
 }
 /** flat cap of a profile loop at x, facing dir (±1) */
-function cap(prof, x, dir, color) {
+export function cap(prof, x, dir, color) {
   const sh = new THREE.Shape(prof.map(([z, y]) => new THREE.Vector2(z, y)));
   const g = new THREE.ShapeGeometry(sh); g.rotateY(dir > 0 ? Math.PI / 2 : -Math.PI / 2); g.translate(x, 0, 0);
   if (dir > 0) g.scale(1, 1, 1);
   return { g, color };
 }
 /** insert exact band levels into the side segments of a half profile (z > 0.9·max) so colour edges are crisp */
-function withBands(half, ys) {
+export function withBands(half, ys) {
   const out = [];
   for (let i = 0; i < half.length; i++) {
     out.push(half[i]);
@@ -96,11 +96,11 @@ function withBands(half, ys) {
   return out;
 }
 /** full CCW loop from a half profile (bottom centre -> +z side -> top centre) */
-const mirrorLoop = (half) => [...half, ...half.slice(1, -1).reverse().map(([z, y]) => [-z, y])];
-const seeded = (seed) => { let s = seed >>> 0 || 1; return () => ((s = (s * 16807) % 2147483647) / 2147483647); };
+export const mirrorLoop = (half) => [...half, ...half.slice(1, -1).reverse().map(([z, y]) => [-z, y])];
+export const seeded = (seed) => { let s = seed >>> 0 || 1; return () => ((s = (s * 16807) % 2147483647) / 2147483647); };
 
 // ================================================================== atlas painting
-function paintAtlas(ctx) {
+export function paintAtlas(ctx) {
   const T = ctx.tex, F = T.FONTS;
   return T.draw(ATLAS, ATLAS, (g) => {
     const r = seeded(77);
@@ -181,12 +181,12 @@ const LIVERY = {   // body, bands [y0, y1, colour] (side), front colour, door co
   loop: { body: '#cdd2d8', bands: [[1.9, 2.14, '#f15a22'], [3.28, 3.36, '#f15a22']], front: '#f15a22', door: '#f15a22', roof: '#9ea5ad', seats: [6, 7], logo: true },
   yume: { body: '#cdd2d8', bands: [[1.9, 2.1, '#1f6fbd'], [2.13, 2.18, '#e3007f']], front: '#cdd2d8', door: '#c3c9cf', roof: '#9ea5ad', seats: [0, 3], logo: true },
 };
-const EMU_HALF = [[0, 1.02], [1.34, 1.02], [1.43, 1.07], [1.465, 1.22], [1.475, 1.6], [1.476, 2.0], [1.47, 2.6], [1.458, 3.0], [1.437, 3.25], [1.4, 3.4], [1.32, 3.5], [1.12, 3.6], [0.7, 3.68], [0, 3.71]];
-const ZW = 1.465;   // side wall z at window height
-const WIN_Y0 = 2.3, WIN_Y1 = 3.16;
-const DOOR_HW = 0.66, DOOR_Y0 = 1.16, DOOR_Y1 = 3.12;
+export const EMU_HALF = [[0, 1.02], [1.34, 1.02], [1.43, 1.07], [1.465, 1.22], [1.475, 1.6], [1.476, 2.0], [1.47, 2.6], [1.458, 3.0], [1.437, 3.25], [1.4, 3.4], [1.32, 3.5], [1.12, 3.6], [0.7, 3.68], [0, 3.71]];
+export const ZW = 1.465;   // side wall z at window height
+export const WIN_Y0 = 2.3, WIN_Y1 = 3.16;
+export const DOOR_HW = 0.66, DOOR_Y0 = 1.16, DOOR_Y1 = 3.12;
 /** z-offset of the cab front face at height y (the top rakes back) */
-const rake = (y) => 0.3 * Math.pow(Math.max(0, (y - 2.0) / 1.71), 1.6);
+export const rake = (y) => 0.3 * Math.pow(Math.max(0, (y - 2.0) / 1.71), 1.6);
 
 function emuGeometry(cars, liv, platSide, r) {
   const A = new Acc(), L = new Acc(), Rr = new Acc(), step = P.CAR.len + P.CAR.gap;

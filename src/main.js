@@ -11,7 +11,7 @@ import { createAudio } from './core/audio.js';
 
 export const MODULES = [
   'environment', 'street', 'poles', 'railway', 'station', 'plaza', 'shopsA', 'shopsB', 'houses',
-  'sakura', 'trains', 'crossing', 'props', 'vehicles', 'characters', 'petals', 'inari', 'terminal',
+  'sakura', 'trains', 'crossing', 'props', 'vehicles', 'characters', 'petals', 'inari', 'terminal', 'tokyo',
 ];
 
 const params = new URLSearchParams(location.search);
@@ -80,7 +80,7 @@ const LABELS = {
   environment: '地形と河川敷', street: '商店街の道', poles: '電柱と電線', railway: '線路と架線', station: '駅舎とホーム', plaza: '駅前広場',
   shopsA: 'コンビニ・喫茶・花屋・書店', shopsB: '和菓子・よろず屋・ラーメン・自転車店', houses: '住宅街', sakura: '桜並木', trains: '電車',
   crossing: '踏切', props: '自販機と小物', vehicles: '自転車と車', characters: '町の人々', petals: '花びら',
-  inari: '稲荷山と千本鳥居', terminal: '大阪駅と新幹線',
+  inari: '稲荷山と千本鳥居', terminal: '大阪駅と新幹線', tokyo: '東京・山手線',
 };
 
 async function build() {
@@ -130,6 +130,7 @@ const VIEWS = {
   Digit5: { x: -20.0, z: -92.8, yaw: 160, pitch: -2, label: '河川敷' },
   Digit6: { ...L.INARI.arrive, label: '稲荷山', travel: true },
   Digit7: { ...L.TERMINAL.arrive, label: '大阪駅 1・2番のりば', travel: true },
+  Digit8: { ...L.TOKYO.arrive, label: '東京駅 山手線', travel: true },
 };
 
 // ------------------------------------------------------------------ simulation
@@ -202,6 +203,7 @@ const AMBIENCE = {
   town: { wind: 1, birds: 1, town: 1, crowd: 0 },
   inari: { wind: 1, birds: 1.2, town: 0.3, crowd: 0 },
   terminal: { wind: 0.3, birds: 0.12, town: 0.45, crowd: 1 },
+  tokyo: { wind: 0.6, birds: 0.2, town: 1.0, crowd: 0.7 },
 };
 /** Move the player somewhere else (another area): fade to white, teleport, fade back in. */
 let travelling = false;

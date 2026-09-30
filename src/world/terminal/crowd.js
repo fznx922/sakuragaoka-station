@@ -68,6 +68,46 @@ function mergeAll(list) {
   return g;
 }
 
+/** outfit count (variants of figureMesh) */
+export const OUTFIT_COUNT = OUTFITS.length;
+const _figCache = new Map();
+/** a static low-poly person (body + legs) for shop staff, customers, seated passengers …: variant 0..9, pose
+ *  'stand' | 'sit' (legs forward, seat at y 0.45); front = +z, feet at y 0 (standing). */
+export function figureMesh(ctx, variant, pose = 'stand', extra = null) {
+  const m = new THREE.Mesh(figureGeometry(variant, pose, extra), ctx.mat.toon('#ffffff', { vertexColors: true, paint: 0.02 }));
+  m.castShadow = true; m.receiveShadow = true;
+  return m;
+}
+/** the (cached, shared) geometry of a static figure: position / normal / colour, no uv */
+export function figureGeometry(variant, pose = 'stand', extra = null) {
+  const o = { ...OUTFITS[variant % OUTFITS.length], ...(extra || {}) };
+  const key = variant + pose + JSON.stringify(extra || {});
+  let geo = _figCache.get(key);
+  if (!geo) {
+    const body = figureGeo(o, SKIN[variant % SKIN.length]);
+    const legs = [];
+    for (const s of [-1, 1]) {
+      let g = new THREE.CylinderGeometry(0.07, 0.055, 0.8, 7).translate(0, -0.4, 0);
+      if (pose === 'sit') {   // thigh forward along +z, shin hanging down from the knee
+        const thigh = new THREE.CylinderGeometry(0.075, 0.065, 0.44, 7).translate(0, -0.22, 0).rotateX(-Math.PI / 2);
+        const shin = new THREE.CylinderGeometry(0.058, 0.05, 0.45, 7).translate(0, -0.225, 0.42);
+        const foot = new THREE.BoxGeometry(0.1, 0.07, 0.22).translate(0, -0.42, 0.48);
+        g = mergeAll([thigh, shin, foot].map(q => { q = q.toNonIndexed(); q.deleteAttribute('uv'); q.setAttribute('color', new THREE.BufferAttribute(new Float32Array(q.attributes.position.count * 3).fill(1), 3)); return q; }));
+      }
+      g = g.index ? g.toNonIndexed() : g; if (g.attributes.uv) g.deleteAttribute('uv');
+      g.translate(s * 0.085, 0.82, 0);
+      const c = new THREE.Color(o.skirt ? '#5a4a4a' : o.bottom), n = g.attributes.position.count, a = new Float32Array(n * 3);
+      for (let i = 0; i < n; i++) { a[i * 3] = c.r; a[i * 3 + 1] = c.g; a[i * 3 + 2] = c.b; }
+      g.setAttribute('color', new THREE.BufferAttribute(a, 3)); legs.push(g);
+    }
+    geo = mergeAll([body, ...legs]);
+    if (pose === 'sit') geo.translate(0, -0.37, -0.05);
+    geo.computeBoundingSphere();
+    _figCache.set(key, geo);
+  }
+  return geo;
+}
+
 // ------------------------------------------------------------------ trips (keyframes relative to the doors opening)
 /** keys: [{t, u, y, v, mode: 'walk'|'stand'|'ride', yaw?}] */
 class Trip {

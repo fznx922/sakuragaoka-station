@@ -71,7 +71,7 @@ function snapshot() {
 }
 const warnings = [];
 let failed = false;
-const BUDGET = { environment: 350e3, street: 250e3, poles: 250e3, railway: 400e3, station: 400e3, plaza: 200e3, shopsA: 450e3, shopsB: 450e3, houses: 700e3, sakura: 700e3, trains: 350e3, crossing: 100e3, props: 300e3, vehicles: 250e3, characters: 200e3, petals: 250e3, inari: 2.5e6, terminal: 2.5e6 /* separate areas: the town is hidden while you are there */ };
+const BUDGET = { environment: 350e3, street: 250e3, poles: 250e3, railway: 400e3, station: 400e3, plaza: 200e3, shopsA: 450e3, shopsB: 450e3, houses: 700e3, sakura: 700e3, trains: 350e3, crossing: 100e3, props: 300e3, vehicles: 250e3, characters: 200e3, petals: 250e3, inari: 2.5e6, terminal: 2.5e6, tokyo: 1.2e7 /* separate areas: the town is hidden while you are there; tokyo counts every hidden train LOD (shared geometry, only nearby cars draw) */ };
 
 for (const name of names) {
   const before = snapshot();
@@ -122,7 +122,9 @@ for (const name of names) {
   if (nan) warnings.push(`${name}: ${nan} object(s) with NaN/Infinity positions`);
   if (nonToon.size) warnings.push(`${name}: non-toon lit materials used (${[...nonToon].join(', ')}) — use ctx.mat.toon()/emissive()/glass()`);
   if (report.budget && tris > report.budget) warnings.push(`${name}: ${Math.round(tris)} triangles exceeds budget ${report.budget}`);
-  if (report.canvasPixels > 24e6) warnings.push(`${name}: canvas textures use ${(report.canvasPixels / 1e6).toFixed(1)}M px (> 24M)`);
+  // separate areas get a larger canvas budget (they re-use the town's prop textures, which a lone check counts again)
+  const PX = { terminal: 36e6, tokyo: 36e6 }[name] || 24e6;
+  if (report.canvasPixels > PX) warnings.push(`${name}: canvas textures use ${(report.canvasPixels / 1e6).toFixed(1)}M px (> ${PX / 1e6}M)`);
   console.log(JSON.stringify(report, null, 1));
   if (err) console.log(`BUILD ERROR in ${name}:\n${err.stack || err}`);
   if (updErr) console.log(`UPDATE ERROR in ${name}:\n${updErr.stack || updErr}`);

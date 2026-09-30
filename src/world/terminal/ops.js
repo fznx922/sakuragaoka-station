@@ -35,6 +35,35 @@ export function buildOps(ctx, H) {
     }).catch(() => {});
   }
 
+  // ------------------------------------------------ station ambience: guide chimes, escalator + concourse PA
+  const chimeSpots = [...P.LIFTS.map(L => ({ u: L.u0 - 1.2, y: 2.4, v: L.v })), { u: 0, y: 2.6, v: P.GATES.v }, { u: -2, y: 2.6, v: P.SGATES.v }];
+  const PA_LINES = [
+    '本日も、JR西日本を、ご利用いただきまして、ありがとうございます。',
+    '駆け込み乗車は、大変危険ですので、おやめください。',
+    '不審な物を見かけた際は、お近くの駅係員まで、お知らせください。',
+    '新幹線をご利用のお客様は、新幹線のりかえ口をご利用ください。',
+    'ホームでは、歩きながらの、スマートフォンの操作は、おやめください。',
+  ];
+  let nextChime = 0, nextEsc = 0, nextPA = 40, paIdx = 0;
+  H.update((dt, t) => {
+    const p = H.player(); if (!p || dt <= 0) return;
+    if (t >= nextChime) {
+      nextChime = t + 3.2;
+      let best = null, bd = 16;
+      for (const c of chimeSpots) { const d = Math.hypot(p.u - c.u, p.v - c.v) + Math.abs(p.y - 0) * 2; if (d < bd) { bd = d; best = c; } }
+      if (best && p.y < 4) { const w = P.toWorld(best.u, best.v); au?.play('guideChime', { position: { x: w.x, y: best.y, z: w.z } }); }
+    }
+    if (t >= nextEsc) {
+      nextEsc = t + 34;
+      const L = P.LIFTS.find(L => p.y < 4 && Math.hypot(p.u - (L.u0 - 1), p.v - (L.v - 2.1)) < 12);
+      if (L) { const w = P.toWorld(L.u0 + 1, L.v - 2.1); say('エスカレーターを、ご利用の際は、手すりにおつかまりになり、黄色い線の内側に、お乗りください。', { x: w.x, y: 2.2, z: w.z }); }
+    }
+    if (t >= nextPA) {
+      nextPA = t + 70;
+      if (p.y < 4) { const w = P.toWorld(p.u, p.v); au?.play('announce', { position: { x: w.x, y: 4, z: w.z + 6 }, text: PA_LINES[paIdx++ % PA_LINES.length] }); }
+    }
+  });
+
   H.update((dt, t) => {
     const here = where();
     // ------------------------------------------------ conventional tracks
@@ -93,5 +122,19 @@ export function buildOps(ctx, H) {
       ctx.travel({ x, z: L.PLATFORM.south.edgeZ + 1.3, yaw: 180, pitch: 2 }, { toast: '桜ヶ丘駅 1番線ホーム' });
     }
   });
+  // ------------------------------------------------ to 東京: board the のぞみ on 13番線 while its doors are open
+  {
+    const S13 = P.S_PLATS.find(p => p.track === 13), sdoors = P.shinDoors();
+    let holdS = 0;
+    H.update((dt, t) => {
+      const p = H.player();
+      if (!p || !ctx.travel || dt <= 0 || !L.TOKYO) { holdS = 0; return; }
+      const st = P.shinState(13, t);
+      const at = st.doors > 0.8 && p.y > P.Y.platS - 0.3 && p.v < S13.edge + 0.75 && p.v > S13.edge - 0.4 && sdoors.some(u => Math.abs(p.u - u) < 0.7);
+      if (!at) { holdS = 0; return; }
+      holdS += dt;
+      if (holdS > 0.5) { holdS = 0; ctx.travel(L.TOKYO.arrive, { toast: `${P.S_SERVICES[13].name} ${P.S_SERVICES[13].no}号 → 東京駅  山手線` }); }
+    });
+  }
   return {};
 }

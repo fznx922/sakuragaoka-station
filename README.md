@@ -23,7 +23,15 @@ A walkable, first-person **anime cel-shaded Japanese suburban sakura station** b
 |---|---|
 | ![中央改札口](docs/images/terminal-gates.jpg) | ![2番のりば 新快速](docs/images/terminal-platform.jpg) |
 | ![3・4番のりば, queues at the platform doors](docs/images/terminal-queue.jpg) | ![新幹線 のぞみ](docs/images/terminal-shinkansen.jpg) |
-| ![駅舎](docs/images/terminal-facade.jpg) | |
+| ![駅舎](docs/images/terminal-facade.jpg) | ![駅そば](docs/images/osaka-soba.jpg) |
+| ![Heart-in style kiosk](docs/images/osaka-kiosk.jpg) | |
+
+**東京 · JR山手線 (Yamanote Line)** — ride the loop in an E235 and get off at any of the 30 stations:
+
+| | |
+|---|---|
+| ![Inside the E235, 次は有楽町](docs/images/tokyo-interior.jpg) | ![山手線 platform](docs/images/tokyo-platform.jpg) |
+| ![東京タワー from 浜松町](docs/images/tokyo-tower.jpg) | |
 
 ## Features
 
@@ -37,7 +45,14 @@ A walkable, first-person **anime cel-shaded Japanese suburban sakura station** b
   - **People**: a timetable-driven crowd of ~150. They walk in from the street, tap through the gates, ride the escalators (standing on the right, this is Osaka), queue in pairs at the door markers, and board. Others get off and head for the exits.
   - **Signage**: JR West style 駅名標 and navy hanging signs, plus live departure boards (JP/EN).
   - **Sound**: every track has its own approach and departure melody (original compositions in the JR West style; drop real recordings into `audio/terminal/` to replace them, see its README). Shinkansen platforms have the electronic departure bell. Japanese announcements are spoken.
+  - **Shops and ambience**: a 駅そば stand with people eating at the counter, a Heart-in style kiosk, the 551蓬莱 counter with its queue, ekiben cases and an ekiben cart on the Shinkansen platform, and the same vending machines and recycling bins as the town. The concourse has guide chimes, and the escalators speak their warnings.
   - **Getting there**: step through an open door of train A at Sakuragaoka platform 1, or press 7. Board the 桜川線 train on track 1 to ride home.
+- **東京 · JR山手線 (Yamanote Line)** – a fourth area, the whole Yamanote loop at half scale:
+  - **The line**: all 30 stations from 東京 (JY01) to 神田 (JY30) at their real distances, on a raised viaduct through the city. Each has island platforms with platform doors, JR East 駅名標, canopies, stairs, benches, vending machines and live departure boards.
+  - **Trains**: 24 green-striped E235 trains, 11 cars each, running both ways (外回り and 内回り). Walk in while the doors are open and you ride along. Inside there are seats, poles, swinging hand straps that lean as the train brakes, LCD 次は / まもなく screens (JP/EN), ads and people. Get off at any station.
+  - **Sound**: every station has its own departure melody (発車メロディ). 駒込 plays さくらさくら; the others are original JR East-style jingles, so drop real recordings into `audio/terminal/` to replace them. You also get the JR East door chime, and Japanese and English announcements, both on the platform and inside the car (この電車は山手線…, 次は…, The next station is…).
+  - **The city**: dense blocks with taller districts, 東京タワー near 浜松町, the 新宿 skyscrapers and 都庁, the 丸の内 red-brick station, 渋谷 screens and 秋葉原 neon.
+  - **Getting there**: at 大阪駅 13番線, step into an open door of the のぞみ bound for 東京, or press 8. At 東京, the 「東海道新幹線 のりかえ」 stairs take you back to Osaka.
 - **Living scene** – two trains on a 2-minute timetable (arrive, open doors, depart through the crossing), falling petals with wind and train gusts, petal drifts and petal rafts on the river, townspeople, cats and sparrows.
 - **Synthesized audio** – wind, birds, crossing bell, train motors and rail joints, door chimes, departure / approach melodies, IC gate beeps, Shinkansen run-by, station crowd, and Japanese announcements through the browser's speech synthesis. It is all WebAudio, with no sound files (optional recordings can replace the station melodies).
 - **Performance** – automatic static batching (vertex-colour material merging + texture atlasing); ~4 M triangles at 60+ fps on a desktop GPU.
@@ -72,6 +87,7 @@ Then open <http://localhost:5173>. An internet connection is needed for three.js
 | 1 – 5 | Jump to Street / Plaza / Platform / Crossing / Levee |
 | 6 | Travel to 稲荷山 — or stand still for a moment facing the little hokora of the Inari shrine on the main street; walk back out of the approach (west) to return |
 | 7 | Travel to 大阪駅 — or step through an open door of the train at Sakuragaoka platform 1; board the 桜川線 train on track 1 (1番のりば) there to ride back |
+| 8 | Travel to 東京 (山手線) — or step into an open door of the のぞみ at 大阪駅 13番線; take the 東海道新幹線 stairs at 東京 back |
 | R | Back to the start of the shopping street |
 | H | Hide UI |
 | M | Mute |
@@ -88,12 +104,14 @@ src/core/               renderer & post-processing, toon materials, sky & lights
 src/world/layout.js     world contract: coordinates, roads, lots, spots, timetable
 src/world/<module>.js   scene modules: environment, street, poles, railway, station, plaza,
                         shopsA, shopsB, houses, sakura, trains, crossing, props,
-                        vehicles, characters, petals, inari, terminal (+ helper folders of the same name)
+                        vehicles, characters, petals, inari, terminal, tokyo (+ helper folders of the same name)
 src/world/inari/        稲荷山: plan.js (pure terrain / paths / stairs, used by layout.heightAt),
                         terrain, paths, torii, arch (roofs), shrine, town, mountain, forest, props
 src/world/terminal/     大阪駅: plan.js (pure layout + timetable), structure, roof, canopy (platform frames,
                         catenary), gates, furniture, signs, trains, crowd, people, city,
-                        ops (melodies / announcements), tex, mats
+                        ops (melodies / announcements), shops (soba, kiosk, 551, ekiben), tex, mats
+src/world/tokyo/        東京 山手線: plan.js (ring geometry, 30 stations, timetable), geo, viaduct, stations,
+                        city (blocks + landmarks), e235 (car geometry), trains (riding), ops (melodies / announcements)
 audio/terminal/         optional recordings that replace station sounds (manifest.json + README)
 src/world/lib/          shared generators (smooth cel-shaded foliage)
 tools/                  dev server, headless checks & screenshots
@@ -114,4 +132,4 @@ URL parameters: `?only=station,plaza` (build a subset; `?only=inari` builds just
 
 ## License
 
-[MIT](LICENSE). The town, its shops and 稲荷山 use fictional names. The 大阪駅 area is a personal, non-commercial fan recreation that uses real JR names and logos, which belong to their owners.
+[MIT](LICENSE). The town, its shops and 稲荷山 use fictional names. The 大阪駅 and 東京 山手線 areas are personal, non-commercial fan recreations that uses real JR names and logos, which belong to their owners.

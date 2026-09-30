@@ -9,6 +9,7 @@
 
 import * as INARI_PLAN from './inari/plan.js';
 import * as TERMINAL_PLAN from './terminal/plan.js';
+import * as TOKYO_PLAN from './tokyo/plan.js';
 
 export const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 export const lerp = (a, b, t) => a + (b - a) * t;
@@ -50,11 +51,21 @@ export const TERMINAL = {
   contains: (x) => TERMINAL_PLAN.isTerminal(x),
 };
 
+// ---------------------------------------------------------------- 東京 — the 山手線 loop, further west
+// Built by the tokyo module (src/world/tokyo/plan.js). Reached on the のぞみ to 東京 from 大阪駅 13番線, or key 8.
+export const TOKYO = {
+  origin: TOKYO_PLAN.ORIGIN,
+  play: { x0: TOKYO_PLAN.ORIGIN.x + TOKYO_PLAN.BOUNDS.u0, x1: TOKYO_PLAN.ORIGIN.x + TOKYO_PLAN.BOUNDS.u1, z0: TOKYO_PLAN.ORIGIN.z + TOKYO_PLAN.BOUNDS.v0, z1: TOKYO_PLAN.ORIGIN.z + TOKYO_PLAN.BOUNDS.v1 },
+  arrive: { x: TOKYO_PLAN.ORIGIN.x + TOKYO_PLAN.SPOTS.arrive.u, z: TOKYO_PLAN.ORIGIN.z + TOKYO_PLAN.SPOTS.arrive.v, yaw: TOKYO_PLAN.SPOTS.arrive.yaw, pitch: TOKYO_PLAN.SPOTS.arrive.pitch, y: TOKYO_PLAN.Y.plat },
+  contains: (x) => TOKYO_PLAN.isTokyo(x),
+};
+
 // ---------------------------------------------------------------- separate areas ("realms")
 // Each area lives in its own part of world space; only the area the camera is in is drawn (main.js).
 export const REGIONS = [
   { id: 'inari', ...INARI, groundAt: INARI_PLAN.groundAt },
   { id: 'terminal', ...TERMINAL, groundAt: TERMINAL_PLAN.groundAt },
+  { id: 'tokyo', ...TOKYO, groundAt: TOKYO_PLAN.groundAt },
 ];
 /** The separate area containing world x, or null for the town. */
 export const regionAt = (x) => (x > 2500 || x < -2500 ? REGIONS.find(r => r.contains(x)) || null : null);
@@ -349,6 +360,7 @@ SPOTS.shrineSakura = lotToWorld(lotById('E6'), -2.5, -6.5);
 export const AREAS = [
   ...INARI_PLAN.AREAS.map(a => ({ name: a.name, x0: INARI.origin.x + a.u0, x1: INARI.origin.x + a.u1, z0: INARI.origin.z + a.v0, z1: INARI.origin.z + a.v1 })),
   ...TERMINAL_PLAN.AREAS.map(a => ({ name: a.name, x0: TERMINAL.origin.x + a.u0, x1: TERMINAL.origin.x + a.u1, z0: TERMINAL.origin.z + a.v0, z1: TERMINAL.origin.z + a.v1, y0: a.y0, y1: a.y1 })),
+  ...TOKYO_PLAN.AREAS.map(a => ({ name: a.name, x0: TOKYO.origin.x + a.u0, x1: TOKYO.origin.x + a.u1, z0: TOKYO.origin.z + a.v0, z1: TOKYO.origin.z + a.v1, y0: a.y0 })),
   { name: '桜ヶ丘駅 1番線ホーム', x0: -7, x1: 46, z0: -40, z1: -35.5 },
   { name: '桜ヶ丘駅 2番線ホーム', x0: -7, x1: 46, z0: -51, z1: -46 },
   { name: '桜ヶ丘駅', x0: -4, x1: 12, z0: -35.5, z1: -25 },

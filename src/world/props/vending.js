@@ -63,8 +63,11 @@ function productGeo(key) {
   return mergeAll(parts);
 }
 
-export function buildVending(ctx, H) {
-  const { THREE: T3, L, mat, physics } = ctx;
+const _kits = new WeakMap();
+/** shared textures + materials of the vending machines (one set per ctx) */
+export function vendingKit(ctx) {
+  let K = _kits.get(ctx); if (K) return K;
+  const { mat } = ctx;
   const tx = makeVendTextures(ctx);
   const P = ctx.palette;
   const M = {
@@ -83,93 +86,114 @@ export function buildVending(ctx, H) {
     glass: mat.glass({ tint: '#c8dbe9', opacity: 0.08, streaks: true }),
     products: mat.emissive('#ffffff', 0.93, { map: tx.atlas }),
   };
-  const productMats = {}; // key -> Matrix4[]
-  const addProduct = (key, m) => { (productMats[key] || (productMats[key] = [])).push(m); };
-
+  K = { tx, M }; _kits.set(ctx, K); return K;
+}
+const _geoByKey = {};
+/** One vending machine. v: { id (lineup: V1a V1b V2 V3a V3b V4 V5), x, z (world), rotY, y? (floor height; else the
+ *  terrain footprint) }; H: { place(x, y, z, rotY) -> Group, footprint(x, z, w, d, rot) -> {min, max} }.
+ *  opts.noCollider skips the physics box. Returns { g, y0, rot, put(lx, lz, lrot) -> world pose next to it }. */
+export function vendingMachine(ctx, H, v, opts = {}) {
+  const { THREE: T3, mat, physics } = ctx;
+  const { tx, M } = vendingKit(ctx);
   const plane = (w, h) => new T3.PlaneGeometry(w, h);
   const machines = [];
-
-  for (const v of L.VENDING) {
-    const cfg = LINEUP[v.id] || LINEUP.V1a;
-    const B = BRANDS[cfg.brand];
-    const rot = v.rotY;
-    let y0, base = null;
-    if (v.y !== undefined) { y0 = v.y + 0.02; base = { top: 0.0, bottom: -0.02, steel: true }; }
-    else { const fp = H.footprint(v.x, v.z, 1.08, 0.82, rot); y0 = fp.max + 0.04; base = { top: 0, bottom: fp.min - 0.07 - y0 }; }
-    const g = H.place(v.x, y0, v.z, rot);
-    const k = ctx.kit(g);
-    const casing = mat.toon(B.casing, { paint: cfg.old ? 0.07 : 0.045 });
-    const door = mat.toon(B.door, { paint: cfg.old ? 0.07 : 0.04 });
-    const stile = mat.toon(B.stile, { paint: 0.04 });
-    // --- base / plinth
-    if (base.steel) k.boxB(1.04, 0.02, 0.78, M.steelBase, [0, -0.02, 0]);
-    else k.boxB(1.08, base.top - base.bottom, 0.82, M.concrete, [0, base.bottom, 0]);
-    // --- body + cap
-    k.rbox(1.0, 1.79, 0.625, 0.035, casing, [0, 0.895, -0.0625]);
-    k.rbox(1.03, 0.045, 0.785, 0.018, casing, [0, 1.8075, -0.0045]);
-    // --- front door pieces around the display opening
-    k.rbox(0.99, 0.835, 0.125, 0.02, door, [0, 0.4375, 0.3125]);
-    k.rbox(0.99, 0.23, 0.125, 0.02, door, [0, 1.67, 0.3125]);
-    for (const s of [-1, 1]) k.box(0.035, 0.70, 0.125, stile, [s * 0.4775, 1.205, 0.3125]);
-    // --- header (lit brand panel)
-    k.box(0.935, 0.205, 0.006, M.dark, [0, 1.665, 0.3765]);
-    k.plane(0.91, 0.188, mat.emissive('#ffffff', 1.0, { map: tx.headers[cfg.brand] }), [0, 1.665, 0.3805]);
-    // --- display: back glow, liners, rails, glass
-    k.plane(0.92, 0.70, M.back, [0, 1.205, 0.2515]);
-    k.plane(0.125, 0.70, M.liner, [-0.4595, 1.205, 0.3125], [0, Math.PI / 2, 0]);
-    k.plane(0.125, 0.70, M.liner, [0.4595, 1.205, 0.3125], [0, -Math.PI / 2, 0]);
-    k.plane(0.92, 0.125, M.liner, [0, 1.5535, 0.3125], [Math.PI / 2, 0, 0]);
-    const railTex = tx.rails(v.id, cfg.rows.map((row, r) => row.map((key, i) => {
-      const hot = key.endsWith('*'); const p = PRODUCTS[key.replace('*', '')];
-      return { price: p.price, hot, sold: cfg.sold && cfg.sold.some(([rr, ii]) => rr === r && ii === i) };
-    })), SLOT_X);
-    const railMat = mat.emissive('#ffffff', 0.9, { map: railTex });
-    cfg.rows.forEach((row, r) => {
-      const ry = RAIL_Y[r];
-      k.box(0.92, RAIL_H, 0.11, M.rail, [0, ry + RAIL_H / 2, 0.31]);
-      const pg = plane(0.91, RAIL_H);
-      cellUV(pg, 0, r * 53, 1024, 52, 1024, 160);
-      k.mesh(pg, railMat, [0, ry + RAIL_H / 2, 0.3658]).castShadow = false;
-      // products (instanced later)
-      row.forEach((key0, i) => {
-        const key = key0.replace('*', '');
-        const m = new T3.Matrix4().compose(new T3.Vector3(SLOT_X[i], ry + RAIL_H, 0.305), new T3.Quaternion(), new T3.Vector3(1, 1, 1));
-        machines.push({ g, key, m });
-      });
+  const cfg = LINEUP[v.id] || LINEUP.V1a;
+  const B = BRANDS[cfg.brand];
+  const rot = v.rotY;
+  let y0, base = null;
+  if (v.y !== undefined) { y0 = v.y + 0.02; base = { top: 0.0, bottom: -0.02, steel: true }; }
+  else { const fp = H.footprint(v.x, v.z, 1.08, 0.82, rot); y0 = fp.max + 0.04; base = { top: 0, bottom: fp.min - 0.07 - y0 }; }
+  const g = H.place(v.x, y0, v.z, rot);
+  const k = ctx.kit(g);
+  const casing = mat.toon(B.casing, { paint: cfg.old ? 0.07 : 0.045 });
+  const door = mat.toon(B.door, { paint: cfg.old ? 0.07 : 0.04 });
+  const stile = mat.toon(B.stile, { paint: 0.04 });
+  // --- base / plinth
+  if (base.steel) k.boxB(1.04, 0.02, 0.78, M.steelBase, [0, -0.02, 0]);
+  else k.boxB(1.08, base.top - base.bottom, 0.82, M.concrete, [0, base.bottom, 0]);
+  // --- body + cap
+  k.rbox(1.0, 1.79, 0.625, 0.035, casing, [0, 0.895, -0.0625]);
+  k.rbox(1.03, 0.045, 0.785, 0.018, casing, [0, 1.8075, -0.0045]);
+  // --- front door pieces around the display opening
+  k.rbox(0.99, 0.835, 0.125, 0.02, door, [0, 0.4375, 0.3125]);
+  k.rbox(0.99, 0.23, 0.125, 0.02, door, [0, 1.67, 0.3125]);
+  for (const s of [-1, 1]) k.box(0.035, 0.70, 0.125, stile, [s * 0.4775, 1.205, 0.3125]);
+  // --- header (lit brand panel)
+  k.box(0.935, 0.205, 0.006, M.dark, [0, 1.665, 0.3765]);
+  k.plane(0.91, 0.188, mat.emissive('#ffffff', 1.0, { map: tx.headers[cfg.brand] }), [0, 1.665, 0.3805]);
+  // --- display: back glow, liners, rails, glass
+  k.plane(0.92, 0.70, M.back, [0, 1.205, 0.2515]);
+  k.plane(0.125, 0.70, M.liner, [-0.4595, 1.205, 0.3125], [0, Math.PI / 2, 0]);
+  k.plane(0.125, 0.70, M.liner, [0.4595, 1.205, 0.3125], [0, -Math.PI / 2, 0]);
+  k.plane(0.92, 0.125, M.liner, [0, 1.5535, 0.3125], [Math.PI / 2, 0, 0]);
+  const railTex = tx.rails(v.id, cfg.rows.map((row, r) => row.map((key, i) => {
+    const hot = key.endsWith('*'); const p = PRODUCTS[key.replace('*', '')];
+    return { price: p.price, hot, sold: cfg.sold && cfg.sold.some(([rr, ii]) => rr === r && ii === i) };
+  })), SLOT_X);
+  const railMat = mat.emissive('#ffffff', 0.9, { map: railTex });
+  cfg.rows.forEach((row, r) => {
+    const ry = RAIL_Y[r];
+    k.box(0.92, RAIL_H, 0.11, M.rail, [0, ry + RAIL_H / 2, 0.31]);
+    const pg = plane(0.91, RAIL_H);
+    cellUV(pg, 0, r * 53, 1024, 52, 1024, 160);
+    k.mesh(pg, railMat, [0, ry + RAIL_H / 2, 0.3658]).castShadow = false;
+    // products (instanced later)
+    row.forEach((key0, i) => {
+      const key = key0.replace('*', '');
+      const m = new T3.Matrix4().compose(new T3.Vector3(SLOT_X[i], ry + RAIL_H, 0.305), new T3.Quaternion(), new T3.Vector3(1, 1, 1));
+      machines.push({ g, key, m });
     });
-    const glass = k.plane(0.92, 0.70, M.glass, [0, 1.205, 0.3715]);
-    glass.castShadow = false; glass.receiveShadow = false; ctx.noOutline(glass);
-    // --- lower door: decal art + payment hardware + take-out frame
-    const lower = mat.decal('#ffffff', { map: tx.lowerPanel(v.id, cfg.brand, cfg.ad, { faded: cfg.old, no: cfg.no }), transparent: true });
-    k.plane(0.95, 0.83, lower, [0, 0.44, 0.3772]);
-    k.box(0.05, 0.08, 0.012, M.silver, [0.35, 0.755, 0.381]);
-    k.box(0.007, 0.045, 0.004, M.ink, [0.35, 0.755, 0.3885]);
-    k.box(0.026, 0.05, 0.02, M.silver, [0.415, 0.755, 0.385]);
-    k.box(0.15, 0.04, 0.02, M.dark, [0.35, 0.645, 0.385]);
-    k.box(0.11, 0.006, 0.004, M.ink, [0.35, 0.645, 0.3965]);
-    k.rbox(0.125, 0.095, 0.02, 0.008, M.icBody, [0.35, 0.505, 0.385]);
-    k.plane(0.115, 0.085, M.ic, [0.35, 0.505, 0.3955]);
-    k.box(0.11, 0.075, 0.025, M.silver, [0.35, 0.36, 0.3875]);
-    k.plane(0.085, 0.048, M.ink, [0.35, 0.357, 0.4005]);
-    k.box(0.64, 0.02, 0.02, M.silver, [-0.13, 0.28, 0.385]);
-    k.box(0.66, 0.012, 0.05, M.silver, [-0.13, 0.294, 0.397]);
-    k.box(0.64, 0.02, 0.02, M.silver, [-0.13, 0.08, 0.385]);
-    for (const x of [-0.44, 0.18]) k.box(0.02, 0.22, 0.02, M.silver, [x, 0.18, 0.385]);
-    k.box(0.97, 0.055, 0.02, M.kick, [0, 0.0275, 0.378]);
-    // --- sides: brand graphics + grime; front grime
-    const sideMat = mat.decal('#ffffff', { map: tx.sides[cfg.brand], transparent: true });
-    k.plane(0.56, 1.5, sideMat, [0.5015, 0.98, -0.075], [0, Math.PI / 2, 0]);
-    k.plane(0.56, 1.5, sideMat, [-0.5015, 0.98, -0.075], [0, -Math.PI / 2, 0]);
-    const grimeMat = mat.decal('#ffffff', { map: tx.grime(!!cfg.old), transparent: true, opacity: cfg.old ? 1 : 0.8 });
-    k.plane(0.99, 0.42, grimeMat, [0, 0.21, 0.3795]);
-    k.plane(0.7, 0.42, grimeMat, [0.5035, 0.21, -0.02], [0, Math.PI / 2, 0]);
-    k.plane(0.7, 0.42, grimeMat, [-0.5035, 0.21, -0.02], [0, -Math.PI / 2, 0]);
-    if (v.id === 'V4') {
-      k.plane(0.17, 0.17, mat.decal('#ffffff', { map: tx.sticker, transparent: true }), [0.504, 1.16, 0.12], [0, Math.PI / 2, 0.08]);
-    }
-    physics.addBox(v.x, v.z, 1.0, 0.75, rot, y0 - 0.1, y0 + 1.83);
+  });
+  const glass = k.plane(0.92, 0.70, M.glass, [0, 1.205, 0.3715]);
+  glass.castShadow = false; glass.receiveShadow = false; ctx.noOutline(glass);
+  // --- lower door: decal art + payment hardware + take-out frame
+  const lower = mat.decal('#ffffff', { map: tx.lowerPanel(v.id, cfg.brand, cfg.ad, { faded: cfg.old, no: cfg.no }), transparent: true });
+  k.plane(0.95, 0.83, lower, [0, 0.44, 0.3772]);
+  k.box(0.05, 0.08, 0.012, M.silver, [0.35, 0.755, 0.381]);
+  k.box(0.007, 0.045, 0.004, M.ink, [0.35, 0.755, 0.3885]);
+  k.box(0.026, 0.05, 0.02, M.silver, [0.415, 0.755, 0.385]);
+  k.box(0.15, 0.04, 0.02, M.dark, [0.35, 0.645, 0.385]);
+  k.box(0.11, 0.006, 0.004, M.ink, [0.35, 0.645, 0.3965]);
+  k.rbox(0.125, 0.095, 0.02, 0.008, M.icBody, [0.35, 0.505, 0.385]);
+  k.plane(0.115, 0.085, M.ic, [0.35, 0.505, 0.3955]);
+  k.box(0.11, 0.075, 0.025, M.silver, [0.35, 0.36, 0.3875]);
+  k.plane(0.085, 0.048, M.ink, [0.35, 0.357, 0.4005]);
+  k.box(0.64, 0.02, 0.02, M.silver, [-0.13, 0.28, 0.385]);
+  k.box(0.66, 0.012, 0.05, M.silver, [-0.13, 0.294, 0.397]);
+  k.box(0.64, 0.02, 0.02, M.silver, [-0.13, 0.08, 0.385]);
+  for (const x of [-0.44, 0.18]) k.box(0.02, 0.22, 0.02, M.silver, [x, 0.18, 0.385]);
+  k.box(0.97, 0.055, 0.02, M.kick, [0, 0.0275, 0.378]);
+  // --- sides: brand graphics + grime; front grime
+  const sideMat = mat.decal('#ffffff', { map: tx.sides[cfg.brand], transparent: true });
+  k.plane(0.56, 1.5, sideMat, [0.5015, 0.98, -0.075], [0, Math.PI / 2, 0]);
+  k.plane(0.56, 1.5, sideMat, [-0.5015, 0.98, -0.075], [0, -Math.PI / 2, 0]);
+  const grimeMat = mat.decal('#ffffff', { map: tx.grime(!!cfg.old), transparent: true, opacity: cfg.old ? 1 : 0.8 });
+  k.plane(0.99, 0.42, grimeMat, [0, 0.21, 0.3795]);
+  k.plane(0.7, 0.42, grimeMat, [0.5035, 0.21, -0.02], [0, Math.PI / 2, 0]);
+  k.plane(0.7, 0.42, grimeMat, [-0.5035, 0.21, -0.02], [0, -Math.PI / 2, 0]);
+  if (v.id === 'V4') {
+    k.plane(0.17, 0.17, mat.decal('#ffffff', { map: tx.sticker, transparent: true }), [0.504, 1.16, 0.12], [0, Math.PI / 2, 0.08]);
+  }
+  if (!opts.noCollider) physics.addBox(v.x, v.z, 1.0, 0.75, rot, y0 - 0.1, y0 + 1.83);
+  // products: one shared geometry per product type, plain meshes (the static batcher merges them per cell into
+  // one draw call with the shared atlas material)
+  for (const e of machines) {
+    const geo = _geoByKey[e.key] || (_geoByKey[e.key] = productGeo(e.key));
+    const pm = new T3.Mesh(geo, M.products);
+    e.m.decompose(pm.position, pm.quaternion, pm.scale);
+    pm.castShadow = false; pm.receiveShadow = false; pm.name = 'props.product.' + e.key;
+    e.g.add(pm);
+  }
+  const put = (lx, lz, lrot = 0) => { const p = H.toWorld ? H.toWorld(v.x, v.z, rot, lx, lz) : { x: v.x + lx * Math.cos(rot) + lz * Math.sin(rot), z: v.z - lx * Math.sin(rot) + lz * Math.cos(rot) }; return { x: p.x, z: p.z, rotY: rot + lrot }; };
+  return { g, y0, rot, put };
+}
+
+export function buildVending(ctx, H) {
+  const { L } = ctx;
+  const { tx, M } = vendingKit(ctx);
+  for (const v of L.VENDING) {
+    const { put } = vendingMachine(ctx, H, v);
     // --- neighbours: bins, crates, flag
-    const put = (lx, lz, lrot = 0) => { const p = H.toWorld(v.x, v.z, rot, lx, lz); return { x: p.x, z: p.z, rotY: rot + lrot }; };
     if (v.id === 'V1b') { recycleBin(ctx, H, M, tx, put(0.77, 0.0), 'blue', '#e9ecee', '#5b8fd6'); nobori(ctx, H, tx, put(1.32, 0.05, -0.25)); }
     if (v.id === 'V2') recycleBin(ctx, H, M, tx, put(-0.77, 0.0), 'blue', '#e9ecee', '#5b8fd6', v.y);
     if (v.id === 'V3a') recycleBin(ctx, H, M, tx, put(-0.77, 0.02), 'blue', '#e8eae6', '#4f9e78');
@@ -178,17 +202,6 @@ export function buildVending(ctx, H) {
       crateStack(ctx, H, tx, put(-1.36, 0.0, 0.08), ['#4f7fc4', '#e7c14f']);
     }
     if (v.id === 'V5') recycleBin(ctx, H, M, tx, put(-0.83, 0.04), 'blue', '#e9ecee', '#5b8fd6');
-  }
-
-  // --- products: one shared geometry per product type, plain meshes (the static batcher merges them
-  //     per cell into one draw call with the shared atlas material)
-  const geoByKey = {};
-  for (const e of machines) {
-    const geo = geoByKey[e.key] || (geoByKey[e.key] = productGeo(e.key));
-    const pm = new T3.Mesh(geo, M.products);
-    e.m.decompose(pm.position, pm.quaternion, pm.scale);
-    pm.castShadow = false; pm.receiveShadow = false; pm.name = 'props.product.' + e.key;
-    e.g.add(pm);
   }
 }
 

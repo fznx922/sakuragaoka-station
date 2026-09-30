@@ -87,12 +87,14 @@ centres `L.TRAIN_DOORS_X` = 2, 8, 14, 20, 26, 32), timetable `L.SCHEDULE` (120 s
 passes the crossing while train A waits at platform 1 with doors open). Bicycle geometry contract: `L.BIKE`.
 Station also owns `STATION.sideYard` (east of the building) and `STATION.westYard` (west, keep low).
 
-### 3b. Separate areas (稲荷山 / `L.INARI`, 大阪駅 / `L.TERMINAL`)
+### 3b. Separate areas (稲荷山 / `L.INARI`, 大阪駅 / `L.TERMINAL`, 東京 山手線 / `L.TOKYO`)
 
 The world can hold more than one walkable area (`L.REGIONS`, `L.regionAt(x)`); `terminal` builds **大阪駅** (JR Osaka, a personal fan recreation) at
 x = −4000 the same way (`src/world/terminal/plan.js`, flat ground, raised platforms as walk boxes). `inari` builds **稲荷山**, a mountain shrine modelled on
 Fushimi Inari Taisha, around `L.INARI.origin` (x = 4000), far outside the town: fog hides each area from
-the other. Rules for areas like it:
+the other. `tokyo` builds the **JR山手線** loop around `L.TOKYO.origin` (x = −16000, everything x < −9000) at half
+scale (`src/world/tokyo/plan.js`: ring radius `R`, 30 stations placed by their real km, a pure timetable
+`trainState(dir, k, t)`). Rules for areas like it:
 
 * Heights: `L.heightAt(x, z)` hands x > origin − 1500 to the area's own pure height function
   (`src/world/inari/plan.js`: terrain, flats, stepped stair paths). Physics, the player and every module keep
@@ -106,9 +108,13 @@ the other. Rules for areas like it:
 * Travel: `ctx.travel(pose, {toast})` (main.js) fades out, teleports and fades back in; `ctx.toast(text)`
   shows the HUD location sign. Entrances: praying (standing still, facing the hokora) at the E6 shrine,
   key 6; walking back out of the approach returns to the E6 shrine. 大阪駅: step through an open door of train A
-  at platform 1 (or key 7); board the track-1 train there to return. `ctx.travel` honours `pose.y`, and HUD areas
+  at platform 1 (or key 7); board the track-1 train there to return. 東京: stand at an open door of the
+  S13 のぞみ at 大阪駅 (or key 8); the 「東海道新幹線 のりかえ」 stairs at 東京 lead back to 13番線. `ctx.travel` honours `pose.y`, and HUD areas
   may carry `y0/y1` (the platforms are stacked above the concourse).
 * HUD names: area rectangles are prepended to `L.AREAS`.
+* Rideable trains: `physics.addDynamic(fn)` boxes may carry `top` (a walk box: a floor you can stand on), so a
+  moving car floor works like any other floor. The tokyo trains carry the player: each frame, after the cars
+  move, the player is transformed by the car's delta matrix (position and yaw), then `refreshDynamic` runs.
 
 ## 4. Look (cel shading) — rules
 
@@ -209,9 +215,25 @@ ctx.services.shopsA  = { cafeWindow: { x, y, z, rotY, w, h }, cafeTables: [{ x, 
   * commuter EMUs and 16-car Shinkansen driven by a pure timetable (`plan.convState` / `shinState`, a function of sim time). Each train is one vertex-coloured mesh on a painted atlas, plus the door leaves and lights;
   * `crowd.js`: ~150 instanced passengers whose trips (walk in, gate, stairs or escalator, queue, board; or alight and leave) are pure functions of the timetable;
   * ops: per-track approach and departure melodies, the Shinkansen bell, and spoken announcements (only on the player's platform). `audio.useFile(name, url)` swaps in a recording listed in `audio/terminal/manifest.json`;
-  * people, and the surrounding city.
+  * `shops.js`: 駅そば stand, Heart-in style kiosk, 551蓬莱 counter with its queue, ekiben cases and a platform
+    ekiben cart; the town's vending machines and recycle bins (`props/vending.js` exports `vendingMachine` and
+    `recycleBin`, which any module can place with its own `place`/`footprint` helpers);
+  * people, and the surrounding city. `crowd.js` also exports `figureMesh` / `figureGeometry` (stand or sit pose).
 
   Publishes `services.terminal`.
+* **tokyo**: the whole 東京 山手線 area (§3b). Its contents are:
+  * `viaduct.js`: the ground/street disc, concrete viaduct deck, parapets, slab track, rails and catenary (instanced
+    per sector);
+  * `stations.js`: 30 island-pair platforms with platform doors (leaves are one InstancedMesh, closed leaves are
+    dynamic colliders), canopies, JR East 駅名標, direction signs, stairs, benches, vending and live departure boards;
+  * `city.js`: instanced polar-grid blocks with district height peaks, and landmarks (東京タワー, 新宿 towers and
+    都庁, 丸の内 red brick, 渋谷 screens, 秋葉原 neon);
+  * `e235.js` + `trains.js`: 24 eleven-car E235 trains (12 per direction). Far cars are one mesh; near ones switch to a
+    full interior (seats, poles, swinging straps, LCD 次は screens, ads, door leaves) with walkable colliders;
+  * `ops.js`: the per-station 発車メロディ (`jy01`–`jy30`), the door chime, and JP + EN announcements on the platform
+    and inside the car you ride. `audio.play(name, {lang:'en'})` speaks English; it is queued after the Japanese line.
+
+  Publishes `services.tokyo`.
 
 ## 8. Verify like you mean it
 

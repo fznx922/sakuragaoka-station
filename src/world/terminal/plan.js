@@ -167,7 +167,7 @@ export function nextDepartures(track, t, n = 2, shin = false) {
 export function clock(t) { const m = 2 + Math.floor(t / 60); const h = 16 + Math.floor(m / 60); return `${h}:${String(m % 60).padStart(2, '0')}`; }
 
 // ------------------------------------------------------------------ region contract
-export const isTerminal = (x) => x < ORIGIN.x + 1500;
+export const isTerminal = (x) => x < ORIGIN.x + 1500 && x > -9000;   // Tokyo lies beyond -9000
 export const groundAt = () => 0;   // flat street / concourse; every upper level is a physics walk surface
 export const toWorld = (u, v) => ({ x: ORIGIN.x + u, z: ORIGIN.z + v });
 export const SPOTS = {

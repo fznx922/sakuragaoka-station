@@ -23,6 +23,7 @@ import { buildCity } from './terminal/city.js';
 import { buildOps } from './terminal/ops.js';
 import { buildPeople } from './terminal/people.js';
 import { buildCrowd } from './terminal/crowd.js';
+import { buildShops } from './terminal/shops.js';
 
 export async function build(ctx) {
   const { L } = ctx;
@@ -56,6 +57,7 @@ export async function build(ctx) {
   step('canopy', () => buildCanopy(ctx, H));
   step('gates', () => buildGates(ctx, H));
   step('furniture', () => buildFurniture(ctx, H, structure));
+  step('shops', () => buildShops(ctx, H));
   const signs = step('signs', () => buildSigns(ctx, H)) || {};
   const trains = step('trains', () => buildTrains(ctx, H)) || {};
   step('city', () => buildCity(ctx, H));
